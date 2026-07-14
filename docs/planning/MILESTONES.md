@@ -117,12 +117,12 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Permission matrix fully enforced on all M1 endpoints
-- [ ] API keys work with scoped permissions
-- [ ] Audit logs capture all auth/member/role changes
-- [ ] Timeline shows workspace activity feed
-- [ ] Idempotency prevents duplicate POST mutations
-- [ ] Rate limiting returns 429 with Retry-After
+- [x] Permission matrix fully enforced on all M1 endpoints
+- [x] API keys work with scoped permissions
+- [x] Audit logs capture all auth/member/role changes
+- [x] Timeline shows workspace activity feed
+- [x] Idempotency prevents duplicate POST mutations
+- [x] Rate limiting returns 429 with Retry-After
 
 ---
 

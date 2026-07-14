@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import { AppConfigModule } from './config/config.module';
@@ -9,15 +9,22 @@ import { APP_CONFIG } from './config/config.constants';
 import type { ApiConfig } from '@flowforge/config';
 import { PrismaModule } from './persistence/prisma.module';
 import { OutboxModule } from './common/outbox/outbox.module';
-import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
+import { RedisModule } from './common/redis/redis.module';
+import { CompositeAuthGuard } from './common/auth/composite-auth.guard';
 import { TenantGuard } from './common/tenant/tenant.guard';
+import { PermissionGuard } from './modules/authorization/application/permission.guard';
+import { RateLimitGuard } from './common/rate-limit/rate-limit.guard';
+import { IdempotencyInterceptor } from './common/idempotency/idempotency.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
+import { AuthorizationModule } from './modules/authorization/authorization.module';
 
 @Module({
   imports: [
     AppConfigModule,
     PrismaModule,
+    RedisModule,
     OutboxModule,
+    AuthorizationModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],
       useFactory: (config: ApiConfig) => {
@@ -51,8 +58,11 @@ import { AuthModule } from './modules/auth/auth.module';
     V1Module,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: CompositeAuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: PermissionGuard },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
 export class AppModule {}

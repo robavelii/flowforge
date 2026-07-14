@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from '../../../common/auth/current-user.decorator';
 import { SkipTenant } from '../../../common/tenant/skip-tenant.decorator';
+import { RequirePermission } from '../../../common/auth/require-permission.decorator';
 import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
 import { MembersService } from '../application/members.service';
 import {
@@ -48,6 +49,7 @@ export class MembersController {
   @ApiHeader({ name: 'X-Workspace-Id', required: true, description: 'Tenant workspace UUID' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiOkResponse({ type: MemberResponseDto, isArray: true })
+  @RequirePermission('member:read')
   list(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -61,6 +63,7 @@ export class MembersController {
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiBody({ type: InviteMemberDto })
   @ApiCreatedResponse({ type: InvitationCreatedResponseDto })
+  @RequirePermission('member:invite')
   invite(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -74,6 +77,7 @@ export class MembersController {
   @ApiHeader({ name: 'X-Workspace-Id', required: true })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiOkResponse({ type: InvitationResponseDto, isArray: true })
+  @RequirePermission('member:invite')
   listInvitations(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -88,6 +92,7 @@ export class MembersController {
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiParam({ name: 'invitationId', format: 'uuid' })
   @ApiNoContentResponse()
+  @RequirePermission('member:invite')
   async cancelInvitation(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -103,6 +108,7 @@ export class MembersController {
   @ApiParam({ name: 'userId', format: 'uuid' })
   @ApiBody({ type: UpdateMemberDto })
   @ApiOkResponse({ type: MemberResponseDto })
+  @RequirePermission('member:write')
   updateMember(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
@@ -119,6 +125,7 @@ export class MembersController {
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiParam({ name: 'userId', format: 'uuid' })
   @ApiNoContentResponse()
+  @RequirePermission('member:delete')
   async removeMember(
     @CurrentUser() user: AuthUser,
     @Param('workspaceId', ParseUUIDPipe) workspaceId: string,

@@ -170,7 +170,7 @@ describe('Auth & Tenancy (e2e)', () => {
       .post(`/api/v1/workspaces/${workspaceId}/invitations`)
       .set('Authorization', `Bearer ${accessToken}`)
       .set('X-Workspace-Id', workspaceId)
-      .send({ email: inviteeEmail, role: 'member' })
+      .send({ email: inviteeEmail, role: 'viewer' })
       .expect(201);
 
     invitationToken = (invite.body as InviteResponse).token;

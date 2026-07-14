@@ -58,6 +58,10 @@ async function bootstrap(): Promise<void> {
     .addTag('Organizations')
     .addTag('Workspaces')
     .addTag('Members')
+    .addTag('Roles')
+    .addTag('API Keys')
+    .addTag('Audit')
+    .addTag('Timeline')
     .addTag('Health')
     .build();
 

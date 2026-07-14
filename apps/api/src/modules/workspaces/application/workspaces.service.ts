@@ -42,12 +42,16 @@ export class WorkspacesService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const ownerRole = await tx.role.findFirst({
+        where: { slug: 'owner', isSystem: true, deletedAt: null },
+      });
+
       const workspace = await tx.workspace.create({
         data: {
           organizationId: org.id,
           name: input.name.trim(),
           slug,
-          description: input.description,
+          description: input.description ?? null,
         },
       });
 
@@ -56,6 +60,7 @@ export class WorkspacesService {
           workspaceId: workspace.id,
           userId,
           role: 'owner',
+          roleId: ownerRole?.id,
         },
       });
 

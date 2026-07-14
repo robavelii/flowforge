@@ -5,6 +5,22 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-14
+
+### Added
+
+- Milestone 2: Authorization, audit & activity
+- Permission catalog, system roles (owner/admin/editor/operator/viewer/billing), and RBAC enforcement via `PermissionGuard` + `@RequirePermission`
+- ABAC evaluation with built-in creator-only `workflow:delete` rule
+- Redis-backed permission cache invalidated on role/member changes
+- API key auth (`X-API-Key`) with scoped permissions via `CompositeAuthGuard`
+- Custom workspace role CRUD with permission subsets
+- Immutable audit logs and timeline event projection from outbox relay
+- Cursor-paginated `GET /audit-logs` and `GET /timeline`
+- `Idempotency-Key` interceptor for POST mutations
+- Rate limiting (per-user / per-API-key / per-IP) with 429 + Retry-After
+- Prisma migration `m2_authz_audit` and authz e2e coverage
+
 ## [0.2.0] - 2026-07-14
 
 ### Added

@@ -35,7 +35,8 @@ export class MembersService {
   ) {
     await this.assertMember(workspaceId, actorUserId, ['owner', 'admin']);
     const email = input.email.toLowerCase().trim();
-    const role = input.role ?? 'member';
+    const role =
+      (input.role === 'member' ? 'viewer' : input.role) ?? 'viewer';
 
     const existingMember = await this.prisma.workspaceMember.findFirst({
       where: {
@@ -127,6 +128,14 @@ export class MembersService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      const role = await tx.role.findFirst({
+        where: {
+          slug: invitation.role,
+          deletedAt: null,
+          OR: [{ isSystem: true, workspaceId: null }, { workspaceId: invitation.workspaceId }],
+        },
+      });
+
       const member = await tx.workspaceMember.upsert({
         where: {
           workspaceId_userId: {
@@ -138,10 +147,12 @@ export class MembersService {
           workspaceId: invitation.workspaceId,
           userId,
           role: invitation.role,
+          roleId: role?.id,
         },
         update: {
           status: 'active',
           role: invitation.role,
+          roleId: role?.id,
         },
       });
 

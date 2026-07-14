@@ -15,6 +15,7 @@ import type { TenantContextData } from './tenant-context';
 
 type AuthenticatedRequest = Request & {
   user?: { sub: string; sid?: string };
+  apiKey?: { id: string; scopes: string[]; workspaceId: string };
   tenant?: TenantContextData;
 };
 
@@ -52,6 +53,25 @@ export class TenantGuard implements CanActivate {
     const workspaceId = Array.isArray(workspaceHeader) ? workspaceHeader[0] : workspaceHeader;
     if (!workspaceId) {
       throw new ForbiddenException('X-Workspace-Id header is required');
+    }
+
+    if (request.apiKey) {
+      if (request.apiKey.workspaceId !== workspaceId) {
+        throw new ForbiddenException('API key is not valid for this workspace');
+      }
+      const workspace = await this.prisma.workspace.findFirst({
+        where: { id: workspaceId, deletedAt: null },
+      });
+      if (!workspace) {
+        throw new ForbiddenException('Workspace not found');
+      }
+      request.tenant = {
+        workspaceId,
+        organizationId: workspace.organizationId,
+        userId,
+        memberRole: 'api_key',
+      };
+      return true;
     }
 
     const membership = await this.prisma.workspaceMember.findFirst({

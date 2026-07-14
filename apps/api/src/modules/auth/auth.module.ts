@@ -8,6 +8,7 @@ import { PasswordService } from './application/password.service';
 import { TokenService } from './application/token.service';
 import { OAuthService } from './application/oauth.service';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
+import { CompositeAuthGuard } from '../../common/auth/composite-auth.guard';
 
 @Module({
   imports: [
@@ -24,7 +25,14 @@ import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, TokenService, OAuthService, JwtAuthGuard],
-  exports: [AuthService, JwtModule, JwtAuthGuard, PasswordService],
+  providers: [
+    AuthService,
+    PasswordService,
+    TokenService,
+    OAuthService,
+    JwtAuthGuard,
+    CompositeAuthGuard,
+  ],
+  exports: [AuthService, JwtModule, JwtAuthGuard, CompositeAuthGuard, PasswordService],
 })
 export class AuthModule {}
