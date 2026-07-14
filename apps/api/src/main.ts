@@ -30,14 +30,49 @@ async function bootstrap(): Promise<void> {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('FlowForge API')
-    .setDescription('Multi-tenant workflow automation platform')
+    .setDescription(
+      'Multi-tenant workflow automation platform.\n\n' +
+        'Authenticate with `Authorization: Bearer <accessToken>`.\n' +
+        'Tenant-scoped routes also require `X-Workspace-Id`.',
+    )
     .setVersion(config.APP_VERSION)
-    .addBearerAuth()
-    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'api-key')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'JWT access token from /auth/login or /auth/register',
+      },
+      'bearer',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'X-Workspace-Id',
+        in: 'header',
+        description: 'Workspace tenant UUID (required on tenant-scoped routes)',
+      },
+      'workspace',
+    )
+    .addTag('Auth')
+    .addTag('Organizations')
+    .addTag('Workspaces')
+    .addTag('Members')
+    .addTag('Health')
     .build();
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
+    operationIdFactory: (controllerKey: string, methodKey: string) =>
+      `${controllerKey.replace(/Controller$/, '')}_${methodKey}`,
+  });
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  });
+
 
   app.enableShutdownHooks();
 
