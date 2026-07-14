@@ -60,6 +60,37 @@ enum WorkflowNodeType {
   loop
 }
 
+enum ExecutionStatus {
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum ExecutionTriggerType {
+  manual
+  api
+  schedule
+  webhook
+  replay
+}
+
+enum ExecutionStepStatus {
+  pending
+  running
+  completed
+  failed
+  skipped
+  cancelled
+}
+
+enum ScheduleStatus {
+  active
+  paused
+  deleted
+}
+
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   email           String    @db.VarChar(320)
@@ -84,6 +115,7 @@ model User {
   workflowsCreated   Workflow[]         @relation("WorkflowCreator")
   workflowDraftsSaved WorkflowDraft[]   @relation("WorkflowDraftSaver")
   workflowVersionsPublished WorkflowVersion[] @relation("WorkflowVersionPublisher")
+  executionsStarted  WorkflowExecution[] @relation("ExecutionStarter")
 
   @@unique([email])
   @@index([createdAt])
@@ -187,6 +219,9 @@ model Workspace {
   workflowVersions   WorkflowVersion[]
   searchDocuments    SearchDocument[]
   tags               Tag[]
+  executions         WorkflowExecution[]
+  executionSteps     ExecutionStep[]
+  schedules          Schedule[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -500,6 +535,8 @@ model WorkflowVersion {
   nodes                  WorkflowNode[]
   connections            WorkflowConnection[]
   variables              WorkflowVariable[]
+  executions             WorkflowExecution[]
+  schedules              Schedule[]
 
   @@unique([workflowId, versionNumber])
   @@index([workspaceId, workflowId])
@@ -520,6 +557,7 @@ model WorkflowNode {
   version            WorkflowVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
   outgoingConnections WorkflowConnection[] @relation("ConnectionSource")
   incomingConnections WorkflowConnection[] @relation("ConnectionTarget")
+  executionSteps     ExecutionStep[]
 
   @@unique([versionId, nodeKey])
   @@index([versionId])
@@ -598,4 +636,120 @@ model SearchDocument {
   @@unique([workspaceId, entityType, entityId])
   @@index([workspaceId, entityType])
   @@map("search_documents")
+}
+
+model WorkflowExecution {
+  id                String               @id @default(uuid()) @db.Uuid
+  workspaceId       String               @map("workspace_id") @db.Uuid
+  workflowVersionId String               @map("workflow_version_id") @db.Uuid
+  workflowId        String               @map("workflow_id") @db.Uuid
+  status            ExecutionStatus      @default(queued)
+  triggerType       ExecutionTriggerType @map("trigger_type")
+  triggerPayload    Json?                @map("trigger_payload")
+  idempotencyKey    String?              @map("idempotency_key") @db.VarChar(255)
+  sandbox           Boolean              @default(false)
+  errorCode         String?              @map("error_code") @db.VarChar(64)
+  errorMessage      String?              @map("error_message") @db.Text
+  startedByUserId   String?              @map("started_by_user_id") @db.Uuid
+  replayOfId        String?              @map("replay_of_id") @db.Uuid
+  startedAt         DateTime?            @map("started_at") @db.Timestamptz(6)
+  completedAt       DateTime?            @map("completed_at") @db.Timestamptz(6)
+  checkpoint        Json?
+  version           Int                  @default(1)
+  createdAt         DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflowVersion WorkflowVersion  @relation(fields: [workflowVersionId], references: [id], onDelete: Restrict)
+  startedBy       User?            @relation("ExecutionStarter", fields: [startedByUserId], references: [id], onDelete: SetNull)
+  replayOf        WorkflowExecution?  @relation("ExecutionReplay", fields: [replayOfId], references: [id], onDelete: SetNull)
+  replays         WorkflowExecution[] @relation("ExecutionReplay")
+  steps           ExecutionStep[]
+  logs            ExecutionLog[]
+  metrics         ExecutionMetric[]
+
+  @@index([workspaceId, status, createdAt(sort: Desc)])
+  @@index([workspaceId, workflowVersionId])
+  @@index([workflowId])
+  @@unique([workspaceId, idempotencyKey])
+  @@map("workflow_executions")
+}
+
+model ExecutionStep {
+  id            String              @id @default(uuid()) @db.Uuid
+  workspaceId   String              @map("workspace_id") @db.Uuid
+  executionId   String              @map("execution_id") @db.Uuid
+  nodeId        String?             @map("node_id") @db.Uuid
+  nodeKey       String              @map("node_key") @db.VarChar(128)
+  sequenceNumber Int                @map("sequence_number")
+  status        ExecutionStepStatus @default(pending)
+  inputPayload  Json?               @map("input_payload")
+  outputPayload Json?               @map("output_payload")
+  errorCode     String?             @map("error_code") @db.VarChar(64)
+  errorMessage  String?             @map("error_message") @db.Text
+  attemptNumber Int                 @default(1) @map("attempt_number")
+  startedAt     DateTime?           @map("started_at") @db.Timestamptz(6)
+  completedAt   DateTime?           @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  node      WorkflowNode?     @relation(fields: [nodeId], references: [id], onDelete: SetNull)
+  logs      ExecutionLog[]
+
+  @@unique([executionId, sequenceNumber, attemptNumber])
+  @@index([executionId, status])
+  @@map("execution_steps")
+}
+
+model ExecutionLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  executionId String   @map("execution_id") @db.Uuid
+  stepId      String?  @map("step_id") @db.Uuid
+  level       String   @db.VarChar(16)
+  message     String   @db.Text
+  context     Json?
+  loggedAt    DateTime @default(now()) @map("logged_at") @db.Timestamptz(6)
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  step      ExecutionStep?    @relation(fields: [stepId], references: [id], onDelete: SetNull)
+
+  @@index([executionId, loggedAt])
+  @@map("execution_logs")
+}
+
+model ExecutionMetric {
+  id          String   @id @default(uuid()) @db.Uuid
+  executionId String   @map("execution_id") @db.Uuid
+  metricName  String   @map("metric_name") @db.VarChar(128)
+  value       Float
+  unit        String?  @db.VarChar(32)
+  recordedAt  DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@map("execution_metrics")
+}
+
+model Schedule {
+  id                String         @id @default(uuid()) @db.Uuid
+  workspaceId       String         @map("workspace_id") @db.Uuid
+  workflowId        String         @map("workflow_id") @db.Uuid
+  workflowVersionId String         @map("workflow_version_id") @db.Uuid
+  name              String         @db.VarChar(255)
+  cronExpression    String         @map("cron_expression") @db.VarChar(128)
+  timezone          String         @default("UTC") @db.VarChar(64)
+  status            ScheduleStatus @default(active)
+  nextRunAt         DateTime?      @map("next_run_at") @db.Timestamptz(6)
+  lastRunAt         DateTime?      @map("last_run_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflowVersion WorkflowVersion @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRunAt])
+  @@index([workspaceId])
+  @@map("schedules")
 }

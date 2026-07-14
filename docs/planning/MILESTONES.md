@@ -183,12 +183,12 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Published workflow executes on manual trigger
-- [ ] Cron trigger fires on schedule
-- [ ] Node failures retry per policy; unrecoverable → execution failed
-- [ ] Execution history and logs queryable
-- [ ] Cancel and replay work
-- [ ] Worker graceful shutdown doesn't lose executions
+- [x] Published workflow executes on manual trigger
+- [x] Cron trigger fires on schedule
+- [x] Node failures retry per policy; unrecoverable → execution failed
+- [x] Execution history and logs queryable
+- [x] Cancel and replay work
+- [x] Worker graceful shutdown doesn't lose executions
 
 ---
 

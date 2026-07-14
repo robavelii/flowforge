@@ -5,6 +5,21 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-14
+
+### Added
+
+- Milestone 4: Execution engine
+- Prisma models for executions, steps, logs, metrics, and cron schedules
+- Shared `@flowforge/execution-engine` with DAG traversal, node executors, and circuit breaker
+- BullMQ `workflow.execution` producer (API) and consumer (worker)
+- Manual / sandbox test triggers: `POST /workflows/:id/execute` and `/test`
+- Execution cancel + replay APIs; list/get/logs with cursor pagination
+- Cron schedules with Redis distributed lock on the worker scheduler tick
+- Node-level retries with exponential backoff; execution metrics (`duration_ms`)
+- Graceful worker shutdown waits for in-flight executions after checkpointing
+- Execution e2e for a 3-node sandbox pipeline and schedule CRUD
+
 ## [0.4.0] - 2026-07-14
 
 ### Added

@@ -8,6 +8,8 @@ import { ApiKeysModule } from '../modules/api-keys/api-keys.module';
 import { AuditModule } from '../modules/audit/audit.module';
 import { TimelineModule } from '../modules/timeline/timeline.module';
 import { WorkflowsModule } from '../modules/workflows/workflows.module';
+import { ExecutionsModule } from '../modules/executions/executions.module';
+import { SchedulesModule } from '../modules/schedules/schedules.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { WorkflowsModule } from '../modules/workflows/workflows.module';
     AuditModule,
     TimelineModule,
     WorkflowsModule,
+    ExecutionsModule,
+    SchedulesModule,
   ],
 })
 export class V1Module {}

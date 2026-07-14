@@ -87,6 +87,9 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       WorkflowPublished: 'Workflow published',
       WorkflowUnpublished: 'Workflow unpublished',
       WorkflowDeleted: 'Workflow deleted',
+      ExecutionQueued: 'Execution queued',
+      ExecutionCompleted: 'Execution completed',
+      ExecutionFailed: 'Execution failed',
     };
 
     const title = titles[event.eventType];

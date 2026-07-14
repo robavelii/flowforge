@@ -15,6 +15,7 @@
   "dependencies": {
     "@flowforge/config": "workspace:*",
     "@flowforge/contracts": "workspace:*",
+    "@flowforge/execution-engine": "workspace:*",
     "@nestjs/common": "^11.1.0",
     "@nestjs/core": "^11.1.0",
     "@nestjs/jwt": "^11.0.2",
@@ -24,8 +25,10 @@
     "@nestjs/terminus": "^11.0.0",
     "@prisma/client": "^6.8.2",
     "argon2": "^0.44.0",
+    "bullmq": "^5.80.2",
     "class-transformer": "^0.5.1",
     "compression": "^1.8.0",
+    "cron-parser": "^5.6.2",
     "helmet": "^8.1.0",
     "ioredis": "^5.6.1",
     "minio": "^8.0.5",

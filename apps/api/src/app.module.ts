@@ -10,6 +10,7 @@ import type { ApiConfig } from '@flowforge/config';
 import { PrismaModule } from './persistence/prisma.module';
 import { OutboxModule } from './common/outbox/outbox.module';
 import { RedisModule } from './common/redis/redis.module';
+import { QueueModule } from './common/queue/queue.module';
 import { CompositeAuthGuard } from './common/auth/composite-auth.guard';
 import { TenantGuard } from './common/tenant/tenant.guard';
 import { PermissionGuard } from './modules/authorization/application/permission.guard';
@@ -24,6 +25,7 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
     PrismaModule,
     RedisModule,
     OutboxModule,
+    QueueModule,
     AuthorizationModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],

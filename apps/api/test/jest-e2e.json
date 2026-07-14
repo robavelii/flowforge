@@ -5,6 +5,7 @@
   "testRegex": ".e2e-spec.ts$",
   "forceExit": true,
   "testTimeout": 60000,
+  "maxWorkers": 2,
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   }
