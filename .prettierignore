@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.turbo
+coverage
+apps/docs/.docusaurus
+apps/docs/build
+pnpm-lock.yaml
