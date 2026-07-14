@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./base.json",
   "compilerOptions": {
     "module": "CommonJS",
@@ -8,6 +7,7 @@
     "experimentalDecorators": true,
     "target": "ES2022",
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "exactOptionalPropertyTypes": false
   }
 }

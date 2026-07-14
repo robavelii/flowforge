@@ -84,12 +84,12 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] User can register, login, create org + workspace, invite member
-- [ ] Cross-tenant API access returns 403/404
-- [ ] JWT refresh rotation works; revoked sessions rejected
-- [ ] OAuth login creates/links account
-- [ ] Outbox events persisted in same transaction as domain mutations
-- [ ] All M1 tests pass; CI green
+- [x] User can register, login, create org + workspace, invite member
+- [x] Cross-tenant API access returns 403/404
+- [x] JWT refresh rotation works; revoked sessions rejected
+- [x] OAuth login creates/links account
+- [x] Outbox events persisted in same transaction as domain mutations
+- [x] All M1 tests pass; CI green
 
 ---
 

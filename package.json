@@ -20,8 +20,12 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "prepare": "husky"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -31,6 +35,7 @@
     "husky": "^9.1.7",
     "prettier": "^3.5.3",
     "prisma": "^6.8.2",
+    "tsx": "^4.19.4",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0"
@@ -46,7 +51,8 @@
       "esbuild",
       "msgpackr-extract",
       "@scarf/scarf",
-      "core-js"
+      "core-js",
+      "argon2"
     ]
   }
 }

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { randomUUID } from 'node:crypto';
 import { AppConfigModule } from './config/config.module';
@@ -6,10 +7,17 @@ import { HealthModule } from './health/health.module';
 import { V1Module } from './v1/v1.module';
 import { APP_CONFIG } from './config/config.constants';
 import type { ApiConfig } from '@flowforge/config';
+import { PrismaModule } from './persistence/prisma.module';
+import { OutboxModule } from './common/outbox/outbox.module';
+import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
+import { TenantGuard } from './common/tenant/tenant.guard';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     AppConfigModule,
+    PrismaModule,
+    OutboxModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],
       useFactory: (config: ApiConfig) => {
@@ -38,8 +46,13 @@ import type { ApiConfig } from '@flowforge/config';
         return { pinoHttp };
       },
     }),
+    AuthModule,
     HealthModule,
     V1Module,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: TenantGuard },
   ],
 })
 export class AppModule {}

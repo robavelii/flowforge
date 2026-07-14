@@ -2,9 +2,13 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthService } from './health.service';
 import type { HealthCheck } from '@flowforge/contracts';
+import { Public } from '../common/auth/public.decorator';
+import { SkipTenant } from '../common/tenant/skip-tenant.decorator';
 
 @ApiTags('Health')
 @Controller('v1/health')
+@Public()
+@SkipTenant()
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 

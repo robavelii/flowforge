@@ -41,7 +41,10 @@ export const apiConfigSchema = baseConfigSchema
       .string()
       .default('*')
       .transform((v) => v.split(',').map((s) => s.trim())),
-    JWT_SECRET: z.string().min(32).optional(),
+    JWT_SECRET: z
+      .string()
+      .min(32)
+      .default('flowforge-dev-jwt-secret-change-me-min-32-chars'),
     JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),

@@ -21,6 +21,7 @@ const mockConfig: ApiConfig = {
   API_PORT: 3000,
   API_PREFIX: 'api',
   CORS_ORIGINS: ['*'],
+  JWT_SECRET: 'flowforge-test-jwt-secret-min-32-chars!!',
   JWT_ACCESS_EXPIRES_IN: '15m',
   JWT_REFRESH_EXPIRES_IN: '7d',
   OTEL_SERVICE_NAME: 'flowforge-api',
