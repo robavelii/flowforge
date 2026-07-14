@@ -7,6 +7,7 @@ import { RolesModule } from '../modules/roles/roles.module';
 import { ApiKeysModule } from '../modules/api-keys/api-keys.module';
 import { AuditModule } from '../modules/audit/audit.module';
 import { TimelineModule } from '../modules/timeline/timeline.module';
+import { WorkflowsModule } from '../modules/workflows/workflows.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { TimelineModule } from '../modules/timeline/timeline.module';
     ApiKeysModule,
     AuditModule,
     TimelineModule,
+    WorkflowsModule,
   ],
 })
 export class V1Module {}

@@ -5,6 +5,19 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-14
+
+### Added
+
+- Milestone 3: Workflow CRUD & versioning
+- Prisma models for workflows, drafts, versions, nodes, connections, variables, tags, and search documents
+- Workflow CRUD with Zod graph validation and extensible node-type registry
+- Publish / unpublish / rollback / duplicate with optimistic locking (`expectedVersion`)
+- Redis cache for published workflow snapshots (300s TTL)
+- Search document projection via outbox relay + `GET /workflows/search`
+- Domain events: WorkflowCreated, Updated, Published, Unpublished, Deleted
+- Workflow e2e coverage for full draft → publish → search → rollback lifecycle
+
 ## [0.3.0] - 2026-07-14
 
 ### Added

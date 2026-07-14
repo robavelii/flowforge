@@ -46,6 +46,20 @@ enum ApiKeyStatus {
   expired
 }
 
+enum WorkflowStatus {
+  draft
+  published
+  unpublished
+}
+
+enum WorkflowNodeType {
+  trigger
+  action
+  condition
+  delay
+  loop
+}
+
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   email           String    @db.VarChar(320)
@@ -67,6 +81,9 @@ model User {
   apiKeysCreated     ApiKey[]           @relation("ApiKeyCreator")
   auditLogs          AuditLog[]         @relation("AuditLogActor")
   timelineEvents     TimelineEvent[]    @relation("TimelineEventActor")
+  workflowsCreated   Workflow[]         @relation("WorkflowCreator")
+  workflowDraftsSaved WorkflowDraft[]   @relation("WorkflowDraftSaver")
+  workflowVersionsPublished WorkflowVersion[] @relation("WorkflowVersionPublisher")
 
   @@unique([email])
   @@index([createdAt])
@@ -166,6 +183,10 @@ model Workspace {
   auditLogs          AuditLog[]
   timelineEvents     TimelineEvent[]
   idempotencyRecords IdempotencyRecord[]
+  workflows          Workflow[]
+  workflowVersions   WorkflowVersion[]
+  searchDocuments    SearchDocument[]
+  tags               Tag[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -418,4 +439,163 @@ model IdempotencyRecord {
   @@index([workspaceId])
   @@index([expiresAt])
   @@map("idempotency_records")
+}
+
+model Workflow {
+  id                   String         @id @default(uuid()) @db.Uuid
+  workspaceId          String         @map("workspace_id") @db.Uuid
+  name                 String         @db.VarChar(255)
+  description          String?        @db.Text
+  status               WorkflowStatus @default(draft)
+  isTemplate           Boolean        @default(false) @map("is_template")
+  /// Optimistic lock counter
+  version              Int            @default(1)
+  publishedVersionId   String?        @map("published_version_id") @db.Uuid
+  createdByUserId      String         @map("created_by_user_id") @db.Uuid
+  deletedAt            DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy        User              @relation("WorkflowCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  draft            WorkflowDraft?
+  versions         WorkflowVersion[] @relation("WorkflowVersions")
+  publishedVersion WorkflowVersion?  @relation("WorkflowPublishedVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  tags             WorkflowTag[]
+
+  @@index([workspaceId, deletedAt, updatedAt(sort: Desc)])
+  @@index([workspaceId, status])
+  @@map("workflows")
+}
+
+model WorkflowDraft {
+  id         String   @id @default(uuid()) @db.Uuid
+  workflowId String   @unique @map("workflow_id") @db.Uuid
+  graphJson  Json     @map("graph_json")
+  savedAt    DateTime @default(now()) @map("saved_at") @db.Timestamptz(6)
+  savedById  String?  @map("saved_by_id") @db.Uuid
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  savedBy  User?    @relation("WorkflowDraftSaver", fields: [savedById], references: [id], onDelete: SetNull)
+
+  @@map("workflow_drafts")
+}
+
+model WorkflowVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String   @map("workspace_id") @db.Uuid
+  workflowId    String   @map("workflow_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  changelog     String?  @db.Text
+  snapshotHash  String   @map("snapshot_hash") @db.VarChar(64)
+  graphJson     Json     @map("graph_json")
+  publishedById String   @map("published_by_id") @db.Uuid
+  publishedAt   DateTime @map("published_at") @db.Timestamptz(6)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace              Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflow               Workflow             @relation("WorkflowVersions", fields: [workflowId], references: [id], onDelete: Cascade)
+  publishedBy            User                 @relation("WorkflowVersionPublisher", fields: [publishedById], references: [id], onDelete: Restrict)
+  currentlyPublishedFor  Workflow[]           @relation("WorkflowPublishedVersion")
+  nodes                  WorkflowNode[]
+  connections            WorkflowConnection[]
+  variables              WorkflowVariable[]
+
+  @@unique([workflowId, versionNumber])
+  @@index([workspaceId, workflowId])
+  @@map("workflow_versions")
+}
+
+model WorkflowNode {
+  id        String           @id @default(uuid()) @db.Uuid
+  versionId String           @map("version_id") @db.Uuid
+  nodeKey   String           @map("node_key") @db.VarChar(128)
+  nodeType  WorkflowNodeType @map("node_type")
+  typeKey   String           @map("type_key") @db.VarChar(128)
+  label     String           @db.VarChar(255)
+  config    Json             @default("{}")
+  position  Json             @default("{}")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  version            WorkflowVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  outgoingConnections WorkflowConnection[] @relation("ConnectionSource")
+  incomingConnections WorkflowConnection[] @relation("ConnectionTarget")
+
+  @@unique([versionId, nodeKey])
+  @@index([versionId])
+  @@map("workflow_nodes")
+}
+
+model WorkflowConnection {
+  id           String   @id @default(uuid()) @db.Uuid
+  versionId    String   @map("version_id") @db.Uuid
+  sourceNodeId String   @map("source_node_id") @db.Uuid
+  sourcePort   String   @default("out") @map("source_port") @db.VarChar(64)
+  targetNodeId String   @map("target_node_id") @db.Uuid
+  targetPort   String   @default("in") @map("target_port") @db.VarChar(64)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  version    WorkflowVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  sourceNode WorkflowNode    @relation("ConnectionSource", fields: [sourceNodeId], references: [id], onDelete: Cascade)
+  targetNode WorkflowNode    @relation("ConnectionTarget", fields: [targetNodeId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@map("workflow_connections")
+}
+
+model WorkflowVariable {
+  id          String  @id @default(uuid()) @db.Uuid
+  versionId   String  @map("version_id") @db.Uuid
+  key         String  @db.VarChar(128)
+  value       String  @db.Text
+  description String? @db.Text
+
+  version WorkflowVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, key])
+  @@map("workflow_variables")
+}
+
+model Tag {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  name        String   @db.VarChar(64)
+  color       String?  @db.VarChar(16)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflows WorkflowTag[]
+
+  @@unique([workspaceId, name])
+  @@map("tags")
+}
+
+model WorkflowTag {
+  workflowId String @map("workflow_id") @db.Uuid
+  tagId      String @map("tag_id") @db.Uuid
+
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([workflowId, tagId])
+  @@map("workflow_tags")
+}
+
+/// Full-text search projection (M3); refined in M6
+model SearchDocument {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  entityType  String   @map("entity_type") @db.VarChar(64)
+  entityId    String   @map("entity_id") @db.Uuid
+  title       String   @db.VarChar(512)
+  body        String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, entityType, entityId])
+  @@index([workspaceId, entityType])
+  @@map("search_documents")
 }

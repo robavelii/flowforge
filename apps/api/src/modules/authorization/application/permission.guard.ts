@@ -12,14 +12,17 @@ import {
   ABAC_RESOURCE_KEY,
   type AbacResourceResolver,
 } from '../../../common/auth/abac-resource.decorator';
-import { PermissionService } from '../application/permission.service';
+import { PermissionService } from './permission.service';
+import { PrismaService } from '../../../persistence/prisma.service';
 import type { TenantContextData } from '../../../common/tenant/tenant-context';
 import type { AuthUser } from '../../../common/auth/current-user.decorator';
+import type { AbacResourceContext } from '../domain/abac.types';
 
 type AuthedRequest = {
   user?: AuthUser;
   tenant?: TenantContextData;
   apiKey?: { id: string; scopes: string[]; workspaceId: string };
+  params?: Record<string, string>;
 };
 
 @Injectable()
@@ -27,6 +30,7 @@ export class PermissionGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly permissions: PermissionService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -77,9 +81,26 @@ export class PermissionGuard implements CanActivate {
       ABAC_RESOURCE_KEY,
       [context.getHandler(), context.getClass()],
     );
-    const resource = resolver
+    let resource: AbacResourceContext | undefined = resolver
       ? await resolver(request)
       : undefined;
+
+    if (!resource && required.includes('workflow:delete')) {
+      const workflowId = request.params?.['id'];
+      if (workflowId) {
+        const wf = await this.prisma.workflow.findFirst({
+          where: { id: workflowId, workspaceId: tenant.workspaceId, deletedAt: null },
+          select: { createdByUserId: true },
+        });
+        if (wf) {
+          resource = {
+            resourceType: 'Workflow',
+            resourceId: workflowId,
+            createdBy: wf.createdByUserId,
+          };
+        }
+      }
+    }
 
     for (const perm of required) {
       const rbacOk = this.permissions.hasPermission(granted, perm);

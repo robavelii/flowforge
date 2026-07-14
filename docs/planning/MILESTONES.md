@@ -149,11 +149,11 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] User can create workflow, edit graph, publish, view versions, rollback
-- [ ] Draft edits don't affect published version
-- [ ] Optimistic locking prevents lost updates
-- [ ] Published workflow cached; cache invalidated on publish
-- [ ] Workflow searchable via search API
+- [x] User can create workflow, edit graph, publish, view versions, rollback
+- [x] Draft edits don't affect published version
+- [x] Optimistic locking prevents lost updates
+- [x] Published workflow cached; cache invalidated on publish
+- [x] Workflow searchable via search API
 
 ---
 

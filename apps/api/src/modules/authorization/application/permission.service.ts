@@ -133,12 +133,13 @@ export class PermissionService {
       decision = 'allow';
     }
 
+    // Creator-only allow for editors (◐): never deny — RBAC still grants owners/admins.
     if (
       decision === 'neutral' &&
       params.permission === 'workflow:delete' &&
-      params.resource?.createdBy
+      params.resource?.createdBy === params.actorUserId
     ) {
-      return params.resource.createdBy === params.actorUserId ? 'allow' : 'deny';
+      return 'allow';
     }
 
     return decision;

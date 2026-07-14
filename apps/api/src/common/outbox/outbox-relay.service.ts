@@ -2,9 +2,11 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { Prisma } from '@prisma/client';
 import { OutboxService } from './outbox.service';
 import { PrismaService } from '../../persistence/prisma.service';
+import { SearchService } from '../../modules/workflows/application/search.service';
+import { WorkflowCacheService } from '../../modules/workflows/infrastructure/workflow-cache.service';
 
 /**
- * Outbox relay — publishes events and projects them to the activity timeline.
+ * Outbox relay — publishes events, projects timeline + search, invalidates caches.
  * BullMQ fan-out for external consumers arrives in later milestones.
  */
 @Injectable()
@@ -16,6 +18,8 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly outbox: OutboxService,
     private readonly prisma: PrismaService,
+    private readonly search: SearchService,
+    private readonly workflowCache: WorkflowCacheService,
   ) {}
 
   onModuleInit(): void {
@@ -48,6 +52,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
 
       for (const event of events) {
         await this.projectTimeline(event);
+        await this.projectSearchAndCache(event);
       }
 
       await this.outbox.markPublished(events.map((e) => e.id));
@@ -77,6 +82,11 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       RoleCreated: 'Role created',
       RoleUpdated: 'Role updated',
       RoleDeleted: 'Role deleted',
+      WorkflowCreated: 'Workflow created',
+      WorkflowUpdated: 'Workflow updated',
+      WorkflowPublished: 'Workflow published',
+      WorkflowUnpublished: 'Workflow unpublished',
+      WorkflowDeleted: 'Workflow deleted',
     };
 
     const title = titles[event.eventType];
@@ -84,17 +94,72 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    const actor =
+      (typeof payload['createdBy'] === 'string' && payload['createdBy']) ||
+      (typeof payload['updatedBy'] === 'string' && payload['updatedBy']) ||
+      (typeof payload['publishedBy'] === 'string' && payload['publishedBy']) ||
+      (typeof payload['unpublishedBy'] === 'string' && payload['unpublishedBy']) ||
+      (typeof payload['deletedBy'] === 'string' && payload['deletedBy']) ||
+      null;
+
     await this.prisma.timelineEvent.create({
       data: {
         workspaceId: event.workspaceId,
-        actorUserId: typeof payload['createdBy'] === 'string' ? payload['createdBy'] : null,
+        actorUserId: actor,
         eventType: event.eventType,
         title,
         summary: JSON.stringify(payload).slice(0, 500),
-        resourceType: typeof payload['aggregateType'] === 'string' ? undefined : event.eventType,
+        resourceType: 'Workflow',
+        resourceId: typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null,
         metadata: payload as Prisma.InputJsonValue,
         occurredAt: new Date(),
       },
     });
+  }
+
+  private async projectSearchAndCache(event: {
+    eventType: string;
+    payload: Prisma.JsonValue;
+    workspaceId: string | null;
+  }): Promise<void> {
+    if (!event.workspaceId) {
+      return;
+    }
+    const payload = (event.payload ?? {}) as Record<string, unknown>;
+    const workflowId = typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+    if (!workflowId) {
+      return;
+    }
+
+    if (event.eventType === 'WorkflowDeleted') {
+      await this.search.removeWorkflowDocument(event.workspaceId, workflowId);
+      await this.workflowCache.invalidate(event.workspaceId, workflowId);
+      return;
+    }
+
+    if (event.eventType === 'WorkflowUnpublished') {
+      await this.workflowCache.invalidate(event.workspaceId, workflowId);
+    }
+
+    if (
+      event.eventType === 'WorkflowCreated' ||
+      event.eventType === 'WorkflowUpdated' ||
+      event.eventType === 'WorkflowPublished'
+    ) {
+      const workflow = await this.prisma.workflow.findFirst({
+        where: { id: workflowId, workspaceId: event.workspaceId },
+        select: { name: true, description: true, status: true },
+      });
+      if (!workflow || !workflow.name) {
+        return;
+      }
+      await this.search.upsertWorkflowDocument({
+        workspaceId: event.workspaceId,
+        workflowId,
+        title: workflow.name,
+        body: workflow.description ?? '',
+        metadata: { status: workflow.status },
+      });
+    }
   }
 }
