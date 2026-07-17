@@ -48,3 +48,6 @@ apps/docs/build/
 # Misc
 *.pem
 .cache/
+
+# Local runtime / seed output
+tmp/
