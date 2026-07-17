@@ -24,6 +24,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm --filter @flowforge/config build
+      - run: pnpm --filter @flowforge/contracts build
+      - run: pnpm --filter @flowforge/execution-engine build
       - run: pnpm format:check
       - run: pnpm lint
 
@@ -164,10 +168,10 @@ jobs:
           echo "MinIO failed to become healthy" >&2
           docker logs flowforge-ci-minio || true
           exit 1
+      - run: pnpm db:generate
       - run: pnpm --filter @flowforge/config build
       - run: pnpm --filter @flowforge/contracts build
       - run: pnpm --filter @flowforge/execution-engine build
-      - run: pnpm db:generate
       - run: pnpm db:migrate:deploy
       - run: pnpm db:seed
       - run: pnpm --filter @flowforge/api test:e2e
