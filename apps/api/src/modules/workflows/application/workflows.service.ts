@@ -259,7 +259,7 @@ export class WorkflowsService {
 
     let patched: typeof document;
     try {
-      patched = applyPatch(document, ops, true, false).newDocument as typeof document;
+      patched = applyPatch(document, ops, true, false).newDocument;
     } catch (err) {
       throw new BadRequestException(
         err instanceof Error ? `Invalid JSON Patch: ${err.message}` : 'Invalid JSON Patch',

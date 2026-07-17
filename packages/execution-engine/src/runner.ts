@@ -136,7 +136,7 @@ export async function runExecution(options: RunExecutionOptions): Promise<Execut
               stepId: step.id,
               level: 'warn',
               message: `Retrying ${node.key} attempt ${String(attempt)}`,
-              context: { error: result.errorMessage } as Prisma.InputJsonValue,
+              context: { error: result.errorMessage },
             },
           });
           await sleep(50 * 2 ** (attempt - 2));
@@ -199,7 +199,7 @@ export async function runExecution(options: RunExecutionOptions): Promise<Execut
             context: {
               typeKey: node.typeKey,
               error: result.errorMessage ?? null,
-            } as Prisma.InputJsonValue,
+            },
           },
         });
 
@@ -240,7 +240,7 @@ export async function runExecution(options: RunExecutionOptions): Promise<Execut
               completed: [...completed],
               skipped: [...skipped],
               sequence,
-            } as Prisma.InputJsonValue,
+            },
             version: { increment: 1 },
           },
         });

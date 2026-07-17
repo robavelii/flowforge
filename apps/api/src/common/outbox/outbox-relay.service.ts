@@ -192,7 +192,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
         entityType: 'member',
         entityId: userId,
         title: user.name,
-        body: `${user.email} ${String(payload['role'] ?? '')}`,
+        body: `${user.email} ${typeof payload['role'] === 'string' ? payload['role'] : ''}`,
         metadata: { role: payload['role'] ?? null },
       });
       return;

@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { loadApiConfig } from '@flowforge/config';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { APP_CONFIG } from '../config/config.constants';
-import type { ApiConfig } from '@flowforge/config';
 
-const mockConfig: ApiConfig = {
+const mockConfig = loadApiConfig({
   NODE_ENV: 'test',
   LOG_LEVEL: 'error',
   APP_NAME: 'flowforge',
@@ -12,20 +12,20 @@ const mockConfig: ApiConfig = {
   DATABASE_URL: 'postgresql://flowforge:flowforge@localhost:5432/flowforge',
   REDIS_URL: 'redis://localhost:6379',
   MINIO_ENDPOINT: 'localhost',
-  MINIO_PORT: 9000,
+  MINIO_PORT: '9000',
   MINIO_ACCESS_KEY: 'minioadmin',
   MINIO_SECRET_KEY: 'minioadmin',
   MINIO_BUCKET: 'flowforge',
-  MINIO_USE_SSL: false,
+  MINIO_USE_SSL: 'false',
   API_HOST: '0.0.0.0',
-  API_PORT: 3000,
+  API_PORT: '3000',
   API_PREFIX: 'api',
-  CORS_ORIGINS: ['*'],
+  CORS_ORIGINS: '*',
   JWT_SECRET: 'flowforge-test-jwt-secret-min-32-chars!!',
   JWT_ACCESS_EXPIRES_IN: '15m',
   JWT_REFRESH_EXPIRES_IN: '7d',
   OTEL_SERVICE_NAME: 'flowforge-api',
-};
+});
 
 describe('HealthController', () => {
   let controller: HealthController;

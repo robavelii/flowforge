@@ -5,6 +5,9 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
+    ignores: ['**/test/**', '**/*.e2e-spec.ts'],
+  },
+  {
     languageOptions: {
       parserOptions: {
         project: './tsconfig.eslint.json',

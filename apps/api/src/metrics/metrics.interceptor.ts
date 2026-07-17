@@ -44,9 +44,16 @@ export class MetricsInterceptor implements NestInterceptor {
 
   private routeLabel(request: RoutedRequest): string {
     const base = request.baseUrl ?? '';
-    const route = request.route?.path;
-    if (typeof route === 'string') {
-      return `${base}${route}` || '/';
+    const rawRoute: unknown = request.route;
+    let routePath: string | undefined;
+    if (rawRoute && typeof rawRoute === 'object' && 'path' in rawRoute) {
+      const candidate = Reflect.get(rawRoute, 'path');
+      if (typeof candidate === 'string') {
+        routePath = candidate;
+      }
+    }
+    if (routePath) {
+      return `${base}${routePath}` || '/';
     }
     return (request.path ?? request.url ?? 'unknown').split('?')[0] ?? 'unknown';
   }

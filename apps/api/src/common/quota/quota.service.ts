@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { Plan, Prisma } from '@prisma/client';
+import type { Plan } from '@prisma/client';
 import { PrismaService } from '../../persistence/prisma.service';
 import { OutboxService } from '../outbox/outbox.service';
 import { RedisService } from '../redis/redis.service';
@@ -123,7 +123,7 @@ export class QuotaService {
         metric: QUOTA_METRIC.EXECUTIONS,
         quantity: 1n,
         periodKey: this.periodKey(period.start),
-        metadata: { source: 'execution' } as Prisma.InputJsonValue,
+        metadata: { source: 'execution' },
       },
     });
 
@@ -165,7 +165,7 @@ export class QuotaService {
         metric: QUOTA_METRIC.STORAGE_BYTES,
         quantity: BigInt(bytes),
         periodKey: this.periodKey(period.start),
-        metadata: { source: 'file_upload' } as Prisma.InputJsonValue,
+        metadata: { source: 'file_upload' },
       },
     });
 

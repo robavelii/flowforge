@@ -108,7 +108,7 @@ export class DlqService {
       attemptsMade: job.attemptsMade,
       failedReason: job.failedReason ?? null,
       timestamp: new Date(job.timestamp).toISOString(),
-      data: job.data,
+      data: job.data as unknown,
     };
   }
 }

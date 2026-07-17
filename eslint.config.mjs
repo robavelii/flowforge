@@ -19,6 +19,14 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/build/**', '**/.docusaurus/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.turbo/**',
+      '**/build/**',
+      '**/.docusaurus/**',
+      '**/*.spec.ts',
+      '**/*.e2e-spec.ts',
+    ],
   },
 );

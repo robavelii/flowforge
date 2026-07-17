@@ -54,9 +54,11 @@ function startMetricsServer(config: ReturnType<typeof loadWorkerConfig>): Worker
     registers: [registry],
   });
 
-  const server = createServer(async (_req, res) => {
+  const server = createServer((_req, res) => {
     res.setHeader('content-type', registry.contentType);
-    res.end(await registry.metrics());
+    void registry.metrics().then((metrics) => {
+      res.end(metrics);
+    });
   });
   server.listen(config.WORKER_METRICS_PORT, '0.0.0.0');
   return { server, queueJobs, queueDepth };
@@ -194,8 +196,9 @@ function main(): void {
             });
             return row?.status === 'cancelled';
           },
-          onCheckpoint: async (checkpoint) => {
+          onCheckpoint: (checkpoint) => {
             logger.debug({ executionId, checkpoint }, 'Execution checkpoint');
+            return Promise.resolve();
           },
         });
 

@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
-import { Prisma, WorkflowStatus } from '@prisma/client';
+import { WorkflowStatus } from '@prisma/client';
 import type { ApiConfig } from '@flowforge/config';
 import { APP_CONFIG } from '../../../config/config.constants';
 import { PrismaService } from '../../../persistence/prisma.service';
@@ -183,8 +183,8 @@ export class WebhookEndpointsService {
           endpointId: endpoint.id,
           eventId,
           signatureValid: false,
-          payload: (params.payload ?? {}) as Prisma.InputJsonValue,
-          headers: params.headers as Prisma.InputJsonValue,
+          payload: (params.payload ?? {}),
+          headers: params.headers,
           statusCode: 401,
           errorMessage: 'Invalid signature or timestamp',
         },
@@ -209,8 +209,8 @@ export class WebhookEndpointsService {
         endpointId: endpoint.id,
         eventId,
         signatureValid: true,
-        payload: (params.payload ?? {}) as Prisma.InputJsonValue,
-        headers: params.headers as Prisma.InputJsonValue,
+        payload: (params.payload ?? {}),
+        headers: params.headers,
         executionId: execution.id,
         statusCode: 202,
       },

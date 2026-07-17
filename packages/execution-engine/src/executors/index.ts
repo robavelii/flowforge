@@ -11,6 +11,14 @@ function asRecord(config: Record<string, unknown>): Record<string, unknown> {
   return config;
 }
 
+function asString(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return String(value);
+  }
+  return fallback;
+}
+
 export async function executeNode(
   node: GraphNode,
   ctx: ExecutionContext,
@@ -28,8 +36,8 @@ export async function executeNode(
   }
 
   if (node.typeKey === 'action.set_variable') {
-    const key = String(config['key'] ?? '');
-    const value = String(config['value'] ?? '');
+    const key = asString(config['key']);
+    const value = asString(config['value']);
     if (!key) {
       return { status: 'failed', errorCode: 'INVALID_CONFIG', errorMessage: 'Missing variable key' };
     }
@@ -42,9 +50,9 @@ export async function executeNode(
   }
 
   if (node.typeKey === 'condition.if') {
-    const left = resolveExpr(String(config['left'] ?? ''), ctx);
-    const op = String(config['operator'] ?? 'eq');
-    const right = resolveExpr(String(config['right'] ?? ''), ctx);
+    const left = resolveExpr(asString(config['left']), ctx);
+    const op = asString(config['operator'], 'eq');
+    const right = resolveExpr(asString(config['right']), ctx);
     const ok = compare(left, op, right);
     return {
       status: 'completed',
@@ -82,8 +90,8 @@ async function executeHttp(
   ctx: ExecutionContext,
   config: Record<string, unknown>,
 ): Promise<NodeExecutionResult> {
-  const url = String(config['url'] ?? '');
-  const method = String(config['method'] ?? 'GET').toUpperCase();
+  const url = asString(config['url']);
+  const method = asString(config['method'], 'GET').toUpperCase();
   if (!url) {
     return { status: 'failed', errorCode: 'INVALID_CONFIG', errorMessage: 'Missing url' };
   }
@@ -186,7 +194,7 @@ function resolveExpr(expr: string, ctx: ExecutionContext): string {
     if (path.startsWith('trigger.')) {
       const key = path.slice(8);
       const v = ctx.triggerPayload[key];
-      return v === undefined || v === null ? '' : String(v);
+      return v === undefined || v === null ? '' : asString(v);
     }
   }
   return expr;

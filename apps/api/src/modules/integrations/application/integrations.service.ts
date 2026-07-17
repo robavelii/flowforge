@@ -62,7 +62,7 @@ export class IntegrationsService {
     return rows.map((r) => this.toDto(r));
   }
 
-  async startConnect(
+  startConnect(
     workspaceId: string,
     userId: string,
     provider: IntegrationProvider,
@@ -251,16 +251,21 @@ export class IntegrationsService {
       throw new BadRequestException('OAuth token exchange failed');
     }
     const json = (await response.json()) as Record<string, unknown>;
-    const accessToken = String(json['access_token'] ?? '');
+    const accessToken =
+      typeof json['access_token'] === 'string' ? json['access_token'] : '';
     if (!accessToken) {
       throw new BadRequestException('OAuth token missing');
     }
+    const refreshToken =
+      typeof json['refresh_token'] === 'string' ? json['refresh_token'] : null;
+    const scope =
+      typeof json['scope'] === 'string' ? json['scope'] : def.scopes.join(' ');
     return {
       accessToken,
-      refreshToken: json['refresh_token'] ? String(json['refresh_token']) : null,
+      refreshToken,
       externalAccountId: null as string | null,
       displayName: null as string | null,
-      scopes: String(json['scope'] ?? def.scopes.join(' ')).split(/[,\s]+/).filter(Boolean),
+      scopes: scope.split(/[,\s]+/).filter(Boolean),
       expiresAt: json['expires_in']
         ? new Date(Date.now() + Number(json['expires_in']) * 1000)
         : null,
