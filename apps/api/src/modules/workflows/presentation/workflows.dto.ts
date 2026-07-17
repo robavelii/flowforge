@@ -15,6 +15,25 @@ export const updateWorkflowSchema = z.object({
   expectedVersion: z.number().int().positive(),
 });
 
+export const jsonPatchSchema = z.object({
+  expectedVersion: z.number().int().positive(),
+  operations: z
+    .array(
+      z.object({
+        op: z.enum(['add', 'remove', 'replace', 'move', 'copy', 'test']),
+        path: z.string().min(1),
+        value: z.unknown().optional(),
+        from: z.string().optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+
+export const bulkWorkflowIdsSchema = z.object({
+  workflowIds: z.array(z.string().uuid()).min(1).max(50),
+});
+
 export const publishWorkflowSchema = z.object({
   changelog: z.string().max(2000).optional(),
   expectedVersion: z.number().int().positive(),
@@ -118,6 +137,33 @@ export class UpdateWorkflowDto {
 
   @ApiProperty({ description: 'Optimistic lock version from last read', example: 1 })
   expectedVersion!: number;
+}
+
+export class JsonPatchOperationDto {
+  @ApiProperty({ enum: ['add', 'remove', 'replace', 'move', 'copy', 'test'] })
+  op!: 'add' | 'remove' | 'replace' | 'move' | 'copy' | 'test';
+
+  @ApiProperty({ example: '/name' })
+  path!: string;
+
+  @ApiPropertyOptional()
+  value?: unknown;
+
+  @ApiPropertyOptional()
+  from?: string;
+}
+
+export class JsonPatchWorkflowDto {
+  @ApiProperty({ example: 1 })
+  expectedVersion!: number;
+
+  @ApiProperty({ type: [JsonPatchOperationDto] })
+  operations!: JsonPatchOperationDto[];
+}
+
+export class BulkWorkflowIdsDto {
+  @ApiProperty({ type: [String], format: 'uuid' })
+  workflowIds!: string[];
 }
 
 export class PublishWorkflowDto {

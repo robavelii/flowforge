@@ -1,5 +1,6 @@
 import './tracing';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
@@ -11,7 +12,7 @@ import { loadApiConfig } from '@flowforge/config';
 async function bootstrap(): Promise<void> {
   const config = loadApiConfig();
 
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     rawBody: true,
   });
@@ -21,6 +22,11 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet());
   app.use(compression());
+
+  // Accept RFC 6902 JSON Patch content type alongside application/json
+  app.useBodyParser('json', {
+    type: ['application/json', 'application/json-patch+json'],
+  });
 
   app.setGlobalPrefix(config.API_PREFIX);
   app.enableCors({
@@ -66,6 +72,10 @@ async function bootstrap(): Promise<void> {
     .addTag('Timeline')
     .addTag('Metrics')
     .addTag('Admin')
+    .addTag('Billing')
+    .addTag('Quotas')
+    .addTag('Settings')
+    .addTag('Feature Flags')
     .addTag('Health')
     .build();
 

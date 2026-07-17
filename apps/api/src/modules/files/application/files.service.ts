@@ -6,6 +6,7 @@ import {
 import { FileScanStatus, FileStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { MinioStorageService } from '../../../common/storage/minio-storage.service';
+import { QuotaService } from '../../../common/quota/quota.service';
 import { AuditService } from '../../audit/application/audit.service';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class FilesService {
     private readonly prisma: PrismaService,
     private readonly storage: MinioStorageService,
     private readonly audit: AuditService,
+    private readonly quotas: QuotaService,
   ) {}
 
   async list(workspaceId: string) {
@@ -35,6 +37,10 @@ export class FilesService {
       throw new BadRequestException('filename is required');
     }
     const contentType = input.contentType.trim() || 'application/octet-stream';
+
+    if (input.sizeBytes !== undefined && input.sizeBytes > 0) {
+      await this.quotas.consumeStorage(workspaceId, input.sizeBytes);
+    }
 
     const file = await this.prisma.fileObject.create({
       data: {

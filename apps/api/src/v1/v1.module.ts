@@ -17,9 +17,14 @@ import { FilesModule } from '../modules/files/files.module';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
 import { SearchModule } from '../modules/search/search.module';
 import { AdminModule } from '../modules/admin/admin.module';
+import { BillingModule } from '../modules/billing/billing.module';
+import { SettingsModule } from '../modules/settings/settings.module';
+import { FeatureFlagsModule } from '../modules/feature-flags/feature-flags.module';
+import { QuotaModule } from '../common/quota/quota.module';
 
 @Module({
   imports: [
+    QuotaModule,
     AuthModule,
     OrganizationsModule,
     WorkspacesModule,
@@ -38,6 +43,9 @@ import { AdminModule } from '../modules/admin/admin.module';
     NotificationsModule,
     SearchModule,
     AdminModule,
+    BillingModule,
+    SettingsModule,
+    FeatureFlagsModule,
   ],
 })
 export class V1Module {}

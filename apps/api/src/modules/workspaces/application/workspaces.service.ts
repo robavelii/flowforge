@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { slugify } from '../../../common/utils/crypto.util';
@@ -46,12 +47,17 @@ export class WorkspacesService {
         where: { slug: 'owner', isSystem: true, deletedAt: null },
       });
 
+      const defaultPlan =
+        (await tx.plan.findFirst({ where: { isDefault: true } })) ??
+        (await tx.plan.findFirst({ where: { slug: 'free' } }));
+
       const workspace = await tx.workspace.create({
         data: {
           organizationId: org.id,
           name: input.name.trim(),
           slug,
           description: input.description ?? null,
+          planId: defaultPlan?.id,
         },
       });
 
@@ -63,6 +69,23 @@ export class WorkspacesService {
           roleId: ownerRole?.id,
         },
       });
+
+      if (defaultPlan) {
+        const now = new Date();
+        const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+        const periodEnd = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+        );
+        await tx.subscription.create({
+          data: {
+            workspaceId: workspace.id,
+            planId: defaultPlan.id,
+            status: SubscriptionStatus.active,
+            currentPeriodStart: periodStart,
+            currentPeriodEnd: periodEnd,
+          },
+        });
+      }
 
       await this.outbox.append(
         {

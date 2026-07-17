@@ -14,6 +14,7 @@ import { PrismaReadService } from '../../../persistence/prisma-read.service';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { QueueService } from '../../../common/queue/queue.service';
+import { QuotaService } from '../../../common/quota/quota.service';
 import { AuditService } from '../../audit/application/audit.service';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class ExecutionsService {
     private readonly queue: QueueService,
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
+    private readonly quotas: QuotaService,
   ) {}
 
   async list(workspaceId: string, opts: { workflowId?: string; status?: string; limit: number; cursor?: string }) {
@@ -235,6 +237,8 @@ export class ExecutionsService {
         return this.toSummary(existing);
       }
     }
+
+    await this.quotas.consumeExecution(params.workspaceId, { sandbox: params.sandbox });
 
     const execution = await this.prisma.$transaction(async (tx) => {
       const created = await tx.workflowExecution.create({

@@ -66,8 +66,59 @@ async function seedPermissionsAndRoles(): Promise<Map<string, string>> {
   return permissionIds;
 }
 
+async function seedPlans() {
+  const free = await prisma.plan.upsert({
+    where: { slug: 'free' },
+    update: {
+      name: 'Free',
+      description: 'Starter plan for evaluation',
+      executionsPerMonth: 100,
+      storageBytes: BigInt(100 * 1024 * 1024),
+      apiRequestsPerMinute: 60,
+      softLimitPercent: 80,
+      isDefault: true,
+    },
+    create: {
+      slug: 'free',
+      name: 'Free',
+      description: 'Starter plan for evaluation',
+      executionsPerMonth: 100,
+      storageBytes: BigInt(100 * 1024 * 1024),
+      apiRequestsPerMinute: 60,
+      softLimitPercent: 80,
+      isDefault: true,
+    },
+  });
+
+  await prisma.plan.upsert({
+    where: { slug: 'pro' },
+    update: {
+      name: 'Pro',
+      description: 'Production workloads',
+      executionsPerMonth: 10_000,
+      storageBytes: BigInt(10 * 1024 * 1024 * 1024),
+      apiRequestsPerMinute: 600,
+      softLimitPercent: 80,
+      isDefault: false,
+    },
+    create: {
+      slug: 'pro',
+      name: 'Pro',
+      description: 'Production workloads',
+      executionsPerMonth: 10_000,
+      storageBytes: BigInt(10 * 1024 * 1024 * 1024),
+      apiRequestsPerMinute: 600,
+      softLimitPercent: 80,
+      isDefault: false,
+    },
+  });
+
+  return free;
+}
+
 async function main(): Promise<void> {
   await seedPermissionsAndRoles();
+  const freePlan = await seedPlans();
 
   const passwordHash = await argon2.hash('Password123!@#', {
     type: argon2.argon2id,
@@ -105,14 +156,33 @@ async function main(): Promise<void> {
         slug: 'default',
       },
     },
-    update: {},
+    update: { planId: freePlan.id },
     create: {
       organizationId: org.id,
       name: 'Default Workspace',
       slug: 'default',
       description: 'Seed workspace for local development',
+      planId: freePlan.id,
     },
   });
+
+  const now = new Date();
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  const existingSub = await prisma.subscription.findFirst({
+    where: { workspaceId: workspace.id, status: 'active' },
+  });
+  if (!existingSub) {
+    await prisma.subscription.create({
+      data: {
+        workspaceId: workspace.id,
+        planId: freePlan.id,
+        status: 'active',
+        currentPeriodStart: periodStart,
+        currentPeriodEnd: periodEnd,
+      },
+    });
+  }
 
   const ownerRole = await prisma.role.findFirst({
     where: { slug: 'owner', isSystem: true, workspaceId: null },
@@ -137,16 +207,30 @@ async function main(): Promise<void> {
     },
   });
 
+  await prisma.featureFlag.upsert({
+    where: {
+      workspaceId_key: { workspaceId: workspace.id, key: 'sandbox_executions' },
+    },
+    update: { enabled: true },
+    create: {
+      workspaceId: workspace.id,
+      key: 'sandbox_executions',
+      enabled: true,
+      description: 'Allow sandbox test executions',
+    },
+  });
+
   await prisma.systemMetadata.upsert({
     where: { key: 'seed.version' },
-    update: { value: 'm2' },
-    create: { key: 'seed.version', value: 'm2' },
+    update: { value: 'm8' },
+    create: { key: 'seed.version', value: 'm8' },
   });
 
   console.log('Seed complete:');
   console.log(`  user: ${user.email} / Password123!@#`);
   console.log(`  org: ${org.slug} (${org.id})`);
   console.log(`  workspace: ${workspace.slug} (${workspace.id})`);
+  console.log(`  plan: ${freePlan.slug}`);
   console.log(`  permissions: ${ALL_PERMISSIONS.length}`);
   console.log(`  system roles: ${Object.keys(SYSTEM_ROLE_PERMISSIONS).join(', ')}`);
 }

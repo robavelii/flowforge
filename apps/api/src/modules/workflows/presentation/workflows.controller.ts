@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -14,6 +16,7 @@ import {
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiHeader,
   ApiNoContentResponse,
@@ -23,6 +26,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import type { Operation } from 'fast-json-patch';
 import { CurrentUser, type AuthUser } from '../../../common/auth/current-user.decorator';
 import { RequirePermission } from '../../../common/auth/require-permission.decorator';
 import { Tenant } from '../../../common/tenant/tenant.decorator';
@@ -32,10 +36,13 @@ import { WorkflowsService } from '../application/workflows.service';
 import { SearchService } from '../application/search.service';
 import { NODE_TYPE_REGISTRY } from '../domain/node-registry';
 import {
+  BulkWorkflowIdsDto,
+  bulkWorkflowIdsSchema,
   CreateWorkflowDto,
   createWorkflowSchema,
   DuplicateWorkflowDto,
   duplicateWorkflowSchema,
+  jsonPatchSchema,
   PublishWorkflowDto,
   publishWorkflowSchema,
   RollbackWorkflowDto,
@@ -106,6 +113,36 @@ export class WorkflowsController {
     return this.workflows.create(tenant.workspaceId, user.sub, body);
   }
 
+  @Post('bulk/archive')
+  @RequirePermission('workflow:write')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Archive multiple workflows' })
+  @ApiHeader({ name: 'X-Workspace-Id', required: true })
+  @ApiBody({ type: BulkWorkflowIdsDto })
+  @ApiOkResponse({ description: 'Bulk archive results' })
+  bulkArchive(
+    @Tenant() tenant: TenantContextData,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(bulkWorkflowIdsSchema)) body: BulkWorkflowIdsDto,
+  ) {
+    return this.workflows.bulkArchive(tenant.workspaceId, body.workflowIds, user.sub);
+  }
+
+  @Post('bulk/delete')
+  @RequirePermission('workflow:delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Soft-delete multiple workflows' })
+  @ApiHeader({ name: 'X-Workspace-Id', required: true })
+  @ApiBody({ type: BulkWorkflowIdsDto })
+  @ApiOkResponse({ description: 'Bulk delete results' })
+  bulkDelete(
+    @Tenant() tenant: TenantContextData,
+    @CurrentUser() user: AuthUser,
+    @Body(new ZodValidationPipe(bulkWorkflowIdsSchema)) body: BulkWorkflowIdsDto,
+  ) {
+    return this.workflows.bulkDelete(tenant.workspaceId, body.workflowIds, user.sub);
+  }
+
   @Get(':id')
   @RequirePermission('workflow:read')
   @ApiOperation({ summary: 'Get workflow with draft graph' })
@@ -118,18 +155,58 @@ export class WorkflowsController {
 
   @Patch(':id')
   @RequirePermission('workflow:write')
-  @ApiOperation({ summary: 'Update draft workflow metadata/graph (optimistic lock)' })
+  @ApiOperation({
+    summary: 'Update draft workflow (JSON body or application/json-patch+json)',
+  })
   @ApiHeader({ name: 'X-Workspace-Id', required: true })
   @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiConsumes('application/json', 'application/json-patch+json')
   @ApiBody({ type: UpdateWorkflowDto })
   @ApiOkResponse({ type: WorkflowSummaryDto })
   update(
     @Tenant() tenant: TenantContextData,
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(updateWorkflowSchema)) body: UpdateWorkflowDto,
+    @Headers('content-type') contentType: string | undefined,
+    @Body() body: unknown,
   ) {
-    return this.workflows.update(tenant.workspaceId, id, user.sub, body);
+    const isPatchEnvelope =
+      typeof body === 'object' &&
+      body !== null &&
+      Array.isArray((body as { operations?: unknown }).operations);
+    const isPatch =
+      contentType?.includes('application/json-patch+json') ||
+      isPatchEnvelope ||
+      (Array.isArray(body) &&
+        body.length > 0 &&
+        typeof body[0] === 'object' &&
+        body[0] !== null &&
+        'op' in (body[0] as object));
+
+    if (isPatch) {
+      if (Array.isArray(body)) {
+        throw new BadRequestException(
+          'JSON Patch requires { expectedVersion, operations } wrapper for optimistic locking',
+        );
+      }
+      const parsed = jsonPatchSchema.safeParse(body);
+      if (!parsed.success) {
+        throw new BadRequestException(parsed.error.errors[0]?.message ?? 'Invalid JSON Patch body');
+      }
+      return this.workflows.applyJsonPatch(
+        tenant.workspaceId,
+        id,
+        user.sub,
+        parsed.data.operations as Operation[],
+        parsed.data.expectedVersion,
+      );
+    }
+
+    const parsed = updateWorkflowSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.errors[0]?.message ?? 'Invalid update body');
+    }
+    return this.workflows.update(tenant.workspaceId, id, user.sub, parsed.data);
   }
 
   @Delete(':id')

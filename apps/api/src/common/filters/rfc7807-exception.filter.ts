@@ -19,9 +19,12 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
     let title = 'Internal Server Error';
     let detail: string | undefined;
     let errors: ProblemDetails['errors'];
+    let retryAfter: number | undefined;
+    let typeSuffix = String(status);
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
+      typeSuffix = String(status);
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'string') {
@@ -30,6 +33,13 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
         const resp = exceptionResponse as Record<string, unknown>;
         title = typeof resp['message'] === 'string' ? resp['message'] : exception.message;
         detail = typeof resp['error'] === 'string' ? resp['error'] : undefined;
+
+        if (typeof resp['retryAfter'] === 'number') {
+          retryAfter = resp['retryAfter'];
+        }
+        if (resp['error'] === 'quota-exceeded') {
+          typeSuffix = 'quota-exceeded';
+        }
 
         if (Array.isArray(resp['message'])) {
           errors = (resp['message'] as string[]).map((msg) => ({
@@ -43,8 +53,12 @@ export class Rfc7807ExceptionFilter implements ExceptionFilter {
       detail = exception.message;
     }
 
+    if (retryAfter !== undefined) {
+      response.setHeader('Retry-After', String(retryAfter));
+    }
+
     const problem: ProblemDetails = {
-      type: `https://flowforge.dev/errors/${status}`,
+      type: `https://flowforge.dev/errors/${typeSuffix}`,
       title,
       status,
       detail,

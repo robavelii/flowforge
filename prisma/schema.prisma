@@ -50,6 +50,14 @@ enum WorkflowStatus {
   draft
   published
   unpublished
+  archived
+}
+
+enum SubscriptionStatus {
+  active
+  canceled
+  past_due
+  trialing
 }
 
 enum WorkflowNodeType {
@@ -250,6 +258,7 @@ model Organization {
 model Workspace {
   id             String          @id @default(uuid()) @db.Uuid
   organizationId String          @map("organization_id") @db.Uuid
+  planId         String?         @map("plan_id") @db.Uuid
   name           String          @db.VarChar(255)
   slug           String          @db.VarChar(64)
   description    String?         @db.Text
@@ -259,6 +268,7 @@ model Workspace {
   updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan               Plan?               @relation(fields: [planId], references: [id], onDelete: SetNull)
   members            WorkspaceMember[]
   invitations        Invitation[]
   outboxEvents       OutboxEvent[]
@@ -285,9 +295,15 @@ model Workspace {
   files              FileObject[]
   notifications      Notification[]
   notificationPreferences NotificationPreference[]
+  tenantSettings     TenantSetting[]
+  quotaUsages        QuotaUsage[]
+  featureFlags       FeatureFlag[]
+  subscriptions      Subscription[]
+  usageRecords       UsageRecord[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
+  @@index([planId])
   @@map("workspaces")
 }
 
@@ -1053,4 +1069,117 @@ model FileObject {
   @@index([workspaceId, deletedAt, createdAt])
   @@index([storageKey])
   @@map("files")
+}
+
+model Plan {
+  id                   String   @id @default(uuid()) @db.Uuid
+  slug                 String   @unique @db.VarChar(64)
+  name                 String   @db.VarChar(128)
+  description          String?  @db.Text
+  /// Monthly execution quota (hard limit)
+  executionsPerMonth   Int      @map("executions_per_month")
+  /// Storage quota in bytes
+  storageBytes         BigInt   @map("storage_bytes")
+  /// API requests per minute (workspace soft/hard quota)
+  apiRequestsPerMinute Int      @map("api_requests_per_minute")
+  /// Soft-limit threshold (0-100) for QuotaThresholdReached
+  softLimitPercent     Int      @default(80) @map("soft_limit_percent")
+  isDefault            Boolean  @default(false) @map("is_default")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspaces    Workspace[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  workspaceId          String             @map("workspace_id") @db.Uuid
+  planId               String             @map("plan_id") @db.Uuid
+  status               SubscriptionStatus @default(active)
+  /// Stripe-ready external reference (nullable until billed)
+  externalCustomerId   String?            @map("external_customer_id") @db.VarChar(255)
+  externalSubscriptionId String?          @map("external_subscription_id") @db.VarChar(255)
+  currentPeriodStart   DateTime           @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd     DateTime           @map("current_period_end") @db.Timestamptz(6)
+  canceledAt           DateTime?          @map("canceled_at") @db.Timestamptz(6)
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, status])
+  @@index([planId])
+  @@map("subscriptions")
+}
+
+model UsageRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  metric      String   @db.VarChar(64)
+  quantity    BigInt
+  /// Opaque billing period key e.g. 2026-07
+  periodKey   String   @map("period_key") @db.VarChar(32)
+  metadata    Json?
+  recordedAt  DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, metric, periodKey])
+  @@index([recordedAt])
+  @@map("usage_records")
+}
+
+model TenantSetting {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  key         String   @db.VarChar(128)
+  value       Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+  @@index([workspaceId])
+  @@map("tenant_settings")
+}
+
+model QuotaUsage {
+  id           String   @id @default(uuid()) @db.Uuid
+  workspaceId  String   @map("workspace_id") @db.Uuid
+  metric       String   @db.VarChar(64)
+  periodStart  DateTime @map("period_start") @db.Date
+  periodEnd    DateTime @map("period_end") @db.Date
+  currentValue BigInt   @default(0) @map("current_value")
+  limitValue   BigInt   @map("limit_value")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, metric, periodStart])
+  @@index([workspaceId, metric])
+  @@map("quota_usages")
+}
+
+model FeatureFlag {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  key         String   @db.VarChar(128)
+  enabled     Boolean  @default(false)
+  description String?  @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+  @@index([key])
+  @@map("feature_flags")
 }

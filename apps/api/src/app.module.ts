@@ -12,6 +12,7 @@ import { OutboxModule } from './common/outbox/outbox.module';
 import { RedisModule } from './common/redis/redis.module';
 import { QueueModule } from './common/queue/queue.module';
 import { StorageModule } from './common/storage/storage.module';
+import { QuotaModule } from './common/quota/quota.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import { CompositeAuthGuard } from './common/auth/composite-auth.guard';
@@ -30,6 +31,7 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
     OutboxModule,
     QueueModule,
     StorageModule,
+    QuotaModule,
     MetricsModule,
     AuthorizationModule,
     LoggerModule.forRootAsync({

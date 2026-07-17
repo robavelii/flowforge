@@ -141,6 +141,7 @@ Aligned with `@flowforge/contracts` `ProblemDetails`:
 | 409 | `conflict` | Optimistic lock conflict, duplicate slug |
 | 422 | `validation-failed` | Zod/business validation failure |
 | 429 | `rate-limit-exceeded` | Rate limit hit; includes `Retry-After` header |
+| 429 | `quota-exceeded` | Workspace plan quota exceeded (executions/storage/API); includes `Retry-After` |
 | 500 | `internal-error` | Unexpected server error |
 | 503 | `service-unavailable` | Dependency down; retry later |
 
@@ -230,9 +231,22 @@ Global `ProblemDetailsExceptionFilter` maps domain exceptions → RFC 7807. Vali
 | GET | `/workspaces/:workspaceId` | Get workspace |
 | PATCH | `/workspaces/:workspaceId` | Update settings |
 | DELETE | `/workspaces/:workspaceId` | Soft delete |
-| GET | `/workspaces/:workspaceId/settings` | Get tenant settings |
-| PATCH | `/workspaces/:workspaceId/settings` | Update tenant settings |
-| GET | `/workspaces/:workspaceId/quotas` | Current quota usage |
+| GET | `/settings` | Get tenant settings (`X-Workspace-Id`) |
+| PATCH | `/settings` | Update tenant settings |
+| GET | `/quotas` | Current quota usage |
+
+### Billing & Feature Flags
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/billing/plans` | List available plans |
+| GET | `/billing/subscription` | Current workspace subscription |
+| PATCH | `/billing/subscription` | Change plan (`billing:manage`) |
+| GET | `/billing/usage` | Recent usage records |
+| GET | `/feature-flags` | List workspace feature flags |
+| GET | `/feature-flags/evaluate?key=` | Evaluate a flag |
+| PUT | `/feature-flags/:key` | Upsert flag |
+| DELETE | `/feature-flags/:key` | Delete flag |
 
 ### Members & Invitations
 
@@ -273,8 +287,10 @@ Global `ProblemDetailsExceptionFilter` maps domain exceptions → RFC 7807. Vali
 | GET | `/workspaces/:workspaceId/workflows` | List workflows |
 | POST | `/workspaces/:workspaceId/workflows` | Create draft workflow |
 | GET | `/workspaces/:workspaceId/workflows/:workflowId` | Get workflow with graph |
-| PATCH | `/workspaces/:workspaceId/workflows/:workflowId` | Update draft |
+| PATCH | `/workspaces/:workspaceId/workflows/:workflowId` | Update draft (`application/json` or `application/json-patch+json`) |
 | DELETE | `/workspaces/:workspaceId/workflows/:workflowId` | Soft delete |
+| POST | `/workflows/bulk/archive` | Bulk archive workflows |
+| POST | `/workflows/bulk/delete` | Bulk soft-delete workflows |
 | POST | `/workspaces/:workspaceId/workflows/:workflowId/publish` | Publish draft |
 | POST | `/workspaces/:workspaceId/workflows/:workflowId/unpublish` | Disable workflow |
 | POST | `/workspaces/:workspaceId/workflows/:workflowId/rollback` | Rollback to version |
@@ -379,6 +395,9 @@ Global `ProblemDetailsExceptionFilter` maps domain exceptions → RFC 7807. Vali
 | POST | `/admin/dlq/:queue/:jobId/replay` | Replay failed queue job |
 | DELETE | `/admin/dlq/:queue/:jobId` | Discard failed queue job |
 | POST | `/admin/maintenance/cleanup` | Run workspace-scoped retention cleanup |
+| GET | `/admin/outbox` | List outbox events |
+| POST | `/admin/outbox/:eventId/replay` | Re-queue outbox event for publish |
+| GET | `/admin/metrics` | Workspace system metrics summary |
 
 ---
 

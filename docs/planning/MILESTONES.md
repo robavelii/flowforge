@@ -302,12 +302,12 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Quotas enforced per workspace plan
-- [ ] Usage analytics available via API
-- [ ] Feature flags control feature access
-- [ ] Sandbox mode prevents real side effects in test runs
-- [ ] All documentation accurate and complete
-- [ ] Platform ready for portfolio demonstration
+- [x] Quotas enforced per workspace plan
+- [x] Usage analytics available via API
+- [x] Feature flags control feature access
+- [x] Sandbox mode prevents real side effects in test runs
+- [x] All documentation accurate and complete
+- [x] Platform ready for portfolio demonstration
 
 ---
 

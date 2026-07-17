@@ -8,7 +8,9 @@ import {
 import type { Request, Response } from 'express';
 import { RedisService } from '../redis/redis.service';
 import type { AuthUser } from '../auth/current-user.decorator';
+import type { TenantContextData } from '../tenant/tenant-context';
 import { MetricsService } from '../../metrics/metrics.service';
+import { QuotaService } from '../quota/quota.service';
 
 const WINDOW_SECONDS = 60;
 
@@ -21,6 +23,7 @@ const LIMITS = {
 type AuthedRequest = Request & {
   user?: AuthUser;
   apiKey?: { id: string; scopes: string[]; workspaceId: string };
+  tenant?: TenantContextData;
 };
 
 @Injectable()
@@ -28,6 +31,7 @@ export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly redis: RedisService,
     private readonly metrics: MetricsService,
+    private readonly quotas: QuotaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -69,6 +73,10 @@ export class RateLimitGuard implements CanActivate {
       }
       // Redis unavailable — fail open
       this.metrics.recordRateLimit(bucketType, 'fail_open');
+    }
+
+    if (request.tenant?.workspaceId) {
+      await this.quotas.consumeApiRequest(request.tenant.workspaceId);
     }
 
     return true;

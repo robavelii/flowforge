@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { applyPatch, type Operation } from 'fast-json-patch';
 import { Prisma, WorkflowNodeType, WorkflowStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -232,6 +233,103 @@ export class WorkflowsService {
     });
 
     await this.cache.invalidate(workspaceId, workflowId);
+  }
+
+  async applyJsonPatch(
+    workspaceId: string,
+    workflowId: string,
+    userId: string,
+    ops: Operation[],
+    expectedVersion: number,
+  ) {
+    const detail = await this.get(workspaceId, workflowId);
+    if (detail.version !== expectedVersion) {
+      throw new ConflictException({
+        message: 'Workflow has been modified; refresh and retry',
+        currentVersion: detail.version,
+        expectedVersion,
+      });
+    }
+
+    const document = {
+      name: detail.name,
+      description: detail.description,
+      graph: detail.graph,
+    };
+
+    let patched: typeof document;
+    try {
+      patched = applyPatch(document, ops, true, false).newDocument as typeof document;
+    } catch (err) {
+      throw new BadRequestException(
+        err instanceof Error ? `Invalid JSON Patch: ${err.message}` : 'Invalid JSON Patch',
+      );
+    }
+
+    return this.update(workspaceId, workflowId, userId, {
+      name: patched.name,
+      description: patched.description,
+      graph: this.parseGraph(patched.graph),
+      expectedVersion,
+    });
+  }
+
+  async bulkArchive(workspaceId: string, workflowIds: string[], userId: string) {
+    const results: Array<{ id: string; status: 'archived' | 'skipped'; reason?: string }> = [];
+    for (const id of workflowIds) {
+      try {
+        const workflow = await this.requireWorkflow(workspaceId, id);
+        if (workflow.status === WorkflowStatus.archived) {
+          results.push({ id, status: 'skipped', reason: 'already_archived' });
+          continue;
+        }
+        await this.prisma.$transaction(async (tx) => {
+          await tx.workflow.update({
+            where: { id },
+            data: {
+              status: WorkflowStatus.archived,
+              publishedVersionId: null,
+            },
+          });
+          await this.outbox.append(
+            {
+              workspaceId,
+              aggregateType: 'Workflow',
+              aggregateId: id,
+              eventType: 'WorkflowArchived',
+              payload: { workflowId: id, workspaceId, archivedBy: userId },
+            },
+            tx,
+          );
+        });
+        await this.cache.invalidate(workspaceId, id);
+        results.push({ id, status: 'archived' });
+      } catch (err) {
+        results.push({
+          id,
+          status: 'skipped',
+          reason: err instanceof Error ? err.message : 'error',
+        });
+      }
+    }
+    return { results };
+  }
+
+  async bulkDelete(workspaceId: string, workflowIds: string[], userId: string) {
+    const results: Array<{ id: string; status: 'deleted' | 'skipped'; reason?: string }> = [];
+    for (const id of workflowIds) {
+      try {
+        await this.softDelete(workspaceId, id, userId);
+        results.push({ id, status: 'deleted' });
+      } catch (err) {
+        results.push({
+          id,
+          status: 'skipped',
+          reason: err instanceof Error ? err.message : 'error',
+        });
+      }
+    }
+    return { results };
   }
 
   async publish(
