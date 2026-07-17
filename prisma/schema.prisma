@@ -91,6 +91,30 @@ enum ScheduleStatus {
   deleted
 }
 
+enum WebhookDeliveryStatus {
+  pending
+  delivered
+  failed
+  dead_lettered
+}
+
+enum SecretType {
+  generic
+  oauth_token
+  api_credential
+}
+
+enum IntegrationProvider {
+  github
+  google
+}
+
+enum IntegrationStatus {
+  connected
+  disconnected
+  error
+}
+
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   email           String    @db.VarChar(320)
@@ -116,6 +140,8 @@ model User {
   workflowDraftsSaved WorkflowDraft[]   @relation("WorkflowDraftSaver")
   workflowVersionsPublished WorkflowVersion[] @relation("WorkflowVersionPublisher")
   executionsStarted  WorkflowExecution[] @relation("ExecutionStarter")
+  secretsCreated     Secret[]            @relation("SecretCreator")
+  integrationsConnected Integration[]    @relation("IntegrationConnector")
 
   @@unique([email])
   @@index([createdAt])
@@ -222,6 +248,12 @@ model Workspace {
   executions         WorkflowExecution[]
   executionSteps     ExecutionStep[]
   schedules          Schedule[]
+  webhookEndpoints   WebhookEndpoint[]
+  webhookInboundEvents WebhookInboundEvent[]
+  webhookSubscriptions WebhookSubscription[]
+  webhookDeliveries  WebhookDelivery[]
+  secrets            Secret[]
+  integrations       Integration[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -537,6 +569,7 @@ model WorkflowVersion {
   variables              WorkflowVariable[]
   executions             WorkflowExecution[]
   schedules              Schedule[]
+  webhookEndpoints       WebhookEndpoint[]
 
   @@unique([workflowId, versionNumber])
   @@index([workspaceId, workflowId])
@@ -752,4 +785,153 @@ model Schedule {
   @@index([status, nextRunAt])
   @@index([workspaceId])
   @@map("schedules")
+}
+
+model WebhookEndpoint {
+  id                String   @id @default(uuid()) @db.Uuid
+  workspaceId       String   @map("workspace_id") @db.Uuid
+  workflowId        String   @map("workflow_id") @db.Uuid
+  workflowVersionId String   @map("workflow_version_id") @db.Uuid
+  name              String   @db.VarChar(255)
+  pathToken         String   @unique @map("path_token") @db.VarChar(64)
+  signingSecretEnc  String   @map("signing_secret_enc") @db.Text
+  enabled           Boolean  @default(true)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace       Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workflowVersion WorkflowVersion        @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+  inboundEvents   WebhookInboundEvent[]
+
+  @@index([workspaceId])
+  @@index([workspaceId, pathToken])
+  @@map("webhook_endpoints")
+}
+
+model WebhookInboundEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  workspaceId     String   @map("workspace_id") @db.Uuid
+  endpointId      String   @map("endpoint_id") @db.Uuid
+  eventId         String   @map("event_id") @db.VarChar(128)
+  signatureValid  Boolean  @map("signature_valid")
+  payload         Json
+  headers         Json?
+  executionId     String?  @map("execution_id") @db.Uuid
+  statusCode      Int      @map("status_code")
+  errorMessage    String?  @map("error_message") @db.Text
+  receivedAt      DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  endpoint  WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@unique([endpointId, eventId])
+  @@index([workspaceId, receivedAt])
+  @@map("webhook_inbound_events")
+}
+
+model WebhookSubscription {
+  id               String   @id @default(uuid()) @db.Uuid
+  workspaceId      String   @map("workspace_id") @db.Uuid
+  name             String   @db.VarChar(255)
+  targetUrl        String   @map("target_url") @db.VarChar(2048)
+  signingSecretEnc String   @map("signing_secret_enc") @db.Text
+  eventTypes       String[] @map("event_types")
+  enabled          Boolean  @default(true)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace  Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([workspaceId])
+  @@map("webhook_subscriptions")
+}
+
+model WebhookDelivery {
+  id             String                @id @default(uuid()) @db.Uuid
+  workspaceId    String                @map("workspace_id") @db.Uuid
+  subscriptionId String                @map("subscription_id") @db.Uuid
+  eventType      String                @map("event_type") @db.VarChar(128)
+  eventId        String                @map("event_id") @db.VarChar(128)
+  payload        Json
+  status         WebhookDeliveryStatus @default(pending)
+  attemptCount   Int                   @default(0) @map("attempt_count")
+  httpStatus     Int?                  @map("http_status")
+  responseBody   String?               @map("response_body") @db.Text
+  nextRetryAt    DateTime?             @map("next_retry_at") @db.Timestamptz(6)
+  deliveredAt    DateTime?             @map("delivered_at") @db.Timestamptz(6)
+  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([status, nextRetryAt])
+  @@index([subscriptionId])
+  @@map("webhook_deliveries")
+}
+
+model Secret {
+  id              String     @id @default(uuid()) @db.Uuid
+  workspaceId     String     @map("workspace_id") @db.Uuid
+  name            String     @db.VarChar(128)
+  description     String?    @db.Text
+  secretType      SecretType @default(generic) @map("secret_type")
+  activeVersionId String?    @map("active_version_id") @db.Uuid
+  version         Int        @default(1)
+  createdByUserId String     @map("created_by_user_id") @db.Uuid
+  deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy     User            @relation("SecretCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  versions      SecretVersion[] @relation("SecretVersions")
+  activeVersion SecretVersion?  @relation("SecretActiveVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId, deletedAt])
+  @@map("secrets")
+}
+
+model SecretVersion {
+  id            String   @id @default(uuid()) @db.Uuid
+  secretId      String   @map("secret_id") @db.Uuid
+  versionNumber Int      @map("version_number")
+  ciphertext    String   @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  secret              Secret   @relation("SecretVersions", fields: [secretId], references: [id], onDelete: Cascade)
+  activeForSecrets    Secret[] @relation("SecretActiveVersion")
+
+  @@unique([secretId, versionNumber])
+  @@map("secret_versions")
+}
+
+model Integration {
+  id                 String              @id @default(uuid()) @db.Uuid
+  workspaceId        String              @map("workspace_id") @db.Uuid
+  provider           IntegrationProvider
+  status             IntegrationStatus   @default(connected)
+  externalAccountId  String?             @map("external_account_id") @db.VarChar(255)
+  displayName        String?             @map("display_name") @db.VarChar(255)
+  accessTokenEnc     String?             @map("access_token_enc") @db.Text
+  refreshTokenEnc    String?             @map("refresh_token_enc") @db.Text
+  scopes             String[]            @default([])
+  tokenExpiresAt     DateTime?           @map("token_expires_at") @db.Timestamptz(6)
+  connectedByUserId  String              @map("connected_by_user_id") @db.Uuid
+  metadata           Json?
+  deletedAt          DateTime?           @map("deleted_at") @db.Timestamptz(6)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connectedBy User      @relation("IntegrationConnector", fields: [connectedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, provider])
+  @@index([workspaceId])
+  @@map("integrations")
 }

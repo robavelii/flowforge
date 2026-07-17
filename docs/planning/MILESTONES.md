@@ -213,11 +213,11 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Incoming webhook triggers workflow execution
-- [ ] Outbound webhooks delivered with signature and retries
-- [ ] Secrets stored encrypted; never exposed in API/logs
-- [ ] OAuth integrations connect/disconnect
-- [ ] SSRF protection blocks internal URLs
+- [x] Incoming webhook triggers workflow execution
+- [x] Outbound webhooks delivered with signature and retries
+- [x] Secrets stored encrypted; never exposed in API/logs
+- [x] OAuth integrations connect/disconnect
+- [x] SSRF protection blocks internal URLs
 
 ---
 

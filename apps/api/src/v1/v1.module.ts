@@ -10,6 +10,9 @@ import { TimelineModule } from '../modules/timeline/timeline.module';
 import { WorkflowsModule } from '../modules/workflows/workflows.module';
 import { ExecutionsModule } from '../modules/executions/executions.module';
 import { SchedulesModule } from '../modules/schedules/schedules.module';
+import { SecretsModule } from '../modules/secrets/secrets.module';
+import { WebhooksModule } from '../modules/webhooks/webhooks.module';
+import { IntegrationsModule } from '../modules/integrations/integrations.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { SchedulesModule } from '../modules/schedules/schedules.module';
     WorkflowsModule,
     ExecutionsModule,
     SchedulesModule,
+    SecretsModule,
+    WebhooksModule,
+    IntegrationsModule,
   ],
 })
 export class V1Module {}

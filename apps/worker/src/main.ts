@@ -4,8 +4,9 @@ import Redis from 'ioredis';
 import pino, { type LoggerOptions } from 'pino';
 import { CronExpressionParser } from 'cron-parser';
 import { loadWorkerConfig } from '@flowforge/config';
-import { QUEUES, type ExecutionJobPayload } from '@flowforge/contracts';
+import { QUEUES, type ExecutionJobPayload, type WebhookOutboundJobPayload } from '@flowforge/contracts';
 import { runExecution } from '@flowforge/execution-engine';
+import { deliverOutboundWebhookJob } from './webhook-outbound.js';
 
 function createLogger(level: string, nodeEnv: string): pino.Logger {
   const options: LoggerOptions = { level };
@@ -120,6 +121,9 @@ function main(): void {
   const executionQueue = new Queue<ExecutionJobPayload>(QUEUES.WORKFLOW_EXECUTION, {
     connection,
   });
+  const webhookOutboundQueue = new Queue<WebhookOutboundJobPayload>(QUEUES.WEBHOOK_OUTBOUND, {
+    connection,
+  });
 
   const inflight = new Set<string>();
 
@@ -156,8 +160,27 @@ function main(): void {
     },
   );
 
+  const webhookWorker = new Worker<WebhookOutboundJobPayload>(
+    QUEUES.WEBHOOK_OUTBOUND,
+    async (job) => {
+      logger.info({ deliveryId: job.data.deliveryId, jobId: job.id }, 'Delivering outbound webhook');
+      await deliverOutboundWebhookJob({
+        prisma,
+        deliveryId: job.data.deliveryId,
+        encryptionKey: config.SECRETS_ENCRYPTION_KEY,
+      });
+    },
+    {
+      connection,
+      concurrency: Math.max(1, Math.floor(config.WORKER_CONCURRENCY / 2)),
+    },
+  );
+
   worker.on('failed', (job, err) => {
     logger.error({ jobId: job?.id, error: err.message }, 'Execution job failed');
+  });
+  webhookWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, error: err.message }, 'Webhook delivery job failed');
   });
 
   let schedulerTimer: NodeJS.Timeout | null = setInterval(() => {
@@ -172,13 +195,12 @@ function main(): void {
       clearInterval(schedulerTimer);
       schedulerTimer = null;
     }
-    await worker.close();
-    // Wait briefly for in-flight executions to checkpoint via runner
+    await Promise.all([worker.close(), webhookWorker.close()]);
     const deadline = Date.now() + 25_000;
     while (inflight.size > 0 && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 200));
     }
-    await executionQueue.close();
+    await Promise.all([executionQueue.close(), webhookOutboundQueue.close()]);
     await redis.quit();
     await prisma.$disconnect();
     logger.info('Worker shut down cleanly');

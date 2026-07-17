@@ -5,6 +5,20 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-17
+
+### Added
+
+- Milestone 5: Webhooks & Integrations
+- Prisma models for webhook endpoints/inbound events, outbound subscriptions/deliveries, secrets (+ versions), and OAuth integrations
+- Inbound hooks: `POST /api/v1/hooks/:workspaceId/:pathToken` with HMAC-SHA256, timestamp skew, and event-id dedupe → execution start
+- Outbound subscriptions with signed delivery, retries, DLQ, and delivery history API
+- BullMQ `webhook.outbound` queue + worker consumer; test mode delivers inline without network
+- Secret vault CRUD with AES-256-GCM encryption; values masked and never returned after create
+- GitHub/Google OAuth connect/callback/disconnect (test mode bypasses real providers)
+- SSRF guards blocking private/local outbound URLs
+- Webhook e2e coverage for inbound trigger, outbound fan-out, secrets, OAuth, and SSRF
+
 ## [0.5.0] - 2026-07-14
 
 ### Added

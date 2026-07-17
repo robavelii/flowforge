@@ -12,6 +12,7 @@ async function bootstrap(): Promise<void> {
 
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
 
   const logger = app.get(Logger);

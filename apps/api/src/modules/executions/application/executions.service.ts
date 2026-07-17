@@ -192,6 +192,24 @@ export class ExecutionsService {
     });
   }
 
+  async startFromWebhook(params: {
+    workspaceId: string;
+    workflowId: string;
+    workflowVersionId: string;
+    payload: Record<string, unknown>;
+  }) {
+    return this.createAndEnqueue({
+      workspaceId: params.workspaceId,
+      userId: null,
+      workflowId: params.workflowId,
+      workflowVersionId: params.workflowVersionId,
+      triggerType: ExecutionTriggerType.webhook,
+      payload: params.payload,
+      sandbox: false,
+      priority: true,
+    });
+  }
+
   private async createAndEnqueue(params: {
     workspaceId: string;
     userId: string | null;

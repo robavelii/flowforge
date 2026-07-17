@@ -47,6 +47,15 @@ export const apiConfigSchema = baseConfigSchema
       .default('flowforge-dev-jwt-secret-change-me-min-32-chars'),
     JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
+    SECRETS_ENCRYPTION_KEY: z
+      .string()
+      .min(32)
+      .default('flowforge-dev-secrets-encryption-key-32b'),
+    APP_PUBLIC_URL: z.string().url().default('http://localhost:3000'),
+    GITHUB_CLIENT_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_CLIENT_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-api'),
   });
@@ -56,6 +65,10 @@ export const workerConfigSchema = baseConfigSchema
   .merge(redisConfigSchema)
   .extend({
     WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),
+    SECRETS_ENCRYPTION_KEY: z
+      .string()
+      .min(32)
+      .default('flowforge-dev-secrets-encryption-key-32b'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-worker'),
   });

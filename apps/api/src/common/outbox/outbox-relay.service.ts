@@ -4,10 +4,10 @@ import { OutboxService } from './outbox.service';
 import { PrismaService } from '../../persistence/prisma.service';
 import { SearchService } from '../../modules/workflows/application/search.service';
 import { WorkflowCacheService } from '../../modules/workflows/infrastructure/workflow-cache.service';
+import { WebhookSubscriptionsService } from '../../modules/webhooks/application/webhook-subscriptions.service';
 
 /**
- * Outbox relay — publishes events, projects timeline + search, invalidates caches.
- * BullMQ fan-out for external consumers arrives in later milestones.
+ * Outbox relay — publishes events, projects timeline + search, fans out outbound webhooks.
  */
 @Injectable()
 export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
@@ -20,6 +20,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly search: SearchService,
     private readonly workflowCache: WorkflowCacheService,
+    private readonly webhookSubscriptions: WebhookSubscriptionsService,
   ) {}
 
   onModuleInit(): void {
@@ -53,6 +54,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       for (const event of events) {
         await this.projectTimeline(event);
         await this.projectSearchAndCache(event);
+        await this.fanOutOutboundWebhooks(event);
       }
 
       await this.outbox.markPublished(events.map((e) => e.id));
@@ -164,5 +166,23 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
         metadata: { status: workflow.status },
       });
     }
+  }
+
+  private async fanOutOutboundWebhooks(event: {
+    id: string;
+    eventType: string;
+    payload: Prisma.JsonValue;
+    workspaceId: string | null;
+  }): Promise<void> {
+    if (!event.workspaceId) {
+      return;
+    }
+    const payload = (event.payload ?? {}) as Record<string, unknown>;
+    await this.webhookSubscriptions.enqueueForEvent({
+      workspaceId: event.workspaceId,
+      eventType: event.eventType,
+      eventId: event.id,
+      payload,
+    });
   }
 }
