@@ -1,11 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
-import {
-  NotificationChannel,
-  NotificationStatus,
-  Prisma,
-  type PrismaClient,
-} from '@prisma/client';
+import { NotificationChannel, NotificationStatus, Prisma, type PrismaClient } from '@prisma/client';
 import type { ApiConfig } from '@flowforge/config';
 import { APP_CONFIG } from '../../../config/config.constants';
 import { PrismaService } from '../../../persistence/prisma.service';
@@ -82,9 +77,7 @@ export class NotificationsService {
         },
         update: {
           enabled: u.enabled,
-          ...(u.config !== undefined
-            ? { config: u.config as Prisma.InputJsonValue }
-            : {}),
+          ...(u.config !== undefined ? { config: u.config as Prisma.InputJsonValue } : {}),
         },
       });
     }
@@ -271,9 +264,7 @@ export class NotificationsService {
       return;
     }
 
-    const subject = template.subject
-      ? renderTemplate(template.subject, params.vars)
-      : null;
+    const subject = template.subject ? renderTemplate(template.subject, params.vars) : null;
     const body = renderTemplate(template.body, params.vars);
 
     const notification = await this.prisma.notification.create({
@@ -315,10 +306,7 @@ export class NotificationsService {
     return channel === NotificationChannel.email;
   }
 
-  private async resolveWorkspaceRecipients(
-    workspaceId: string,
-    startedByUserId?: string | null,
-  ) {
+  private async resolveWorkspaceRecipients(workspaceId: string, startedByUserId?: string | null) {
     if (startedByUserId) {
       const user = await this.prisma.user.findFirst({
         where: { id: startedByUserId, deletedAt: null },

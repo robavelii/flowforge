@@ -238,7 +238,8 @@ export class OAuthService {
   }
 
   private getRedirectUri(provider: 'github' | 'google'): string {
-    const base = process.env['API_PUBLIC_URL'] ?? `http://localhost:${String(this.config.API_PORT)}`;
+    const base =
+      process.env['API_PUBLIC_URL'] ?? `http://localhost:${String(this.config.API_PORT)}`;
     return `${base}/api/v1/auth/oauth/${provider}/callback`;
   }
 
@@ -301,7 +302,11 @@ export class OAuthService {
             'User-Agent': 'FlowForge',
           },
         });
-        const emails = (await emailsRes.json()) as Array<{ email: string; primary: boolean; verified: boolean }>;
+        const emails = (await emailsRes.json()) as Array<{
+          email: string;
+          primary: boolean;
+          verified: boolean;
+        }>;
         email = emails.find((e) => e.primary && e.verified)?.email ?? emails[0]?.email;
       }
       if (!email) {

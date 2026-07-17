@@ -213,9 +213,9 @@ describe('Webhooks M5 (e2e)', () => {
       .set('X-Workspace-Id', workspaceId)
       .expect(200);
 
-    expect((deliveries.body as Array<{ status: string }>).some((d) => d.status === 'delivered')).toBe(
-      true,
-    );
+    expect(
+      (deliveries.body as Array<{ status: string }>).some((d) => d.status === 'delivered'),
+    ).toBe(true);
   });
 
   it('connects and disconnects integrations in test mode', async () => {

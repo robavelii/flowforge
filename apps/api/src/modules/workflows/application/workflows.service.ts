@@ -137,8 +137,7 @@ export class WorkflowsService {
       });
     }
 
-    const graph =
-      input.graph !== undefined ? this.parseGraph(input.graph) : undefined;
+    const graph = input.graph !== undefined ? this.parseGraph(input.graph) : undefined;
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.workflow.updateMany({
@@ -151,9 +150,7 @@ export class WorkflowsService {
         data: {
           name: input.name?.trim(),
           description:
-            input.description === undefined
-              ? undefined
-              : input.description?.trim() || null,
+            input.description === undefined ? undefined : input.description?.trim() || null,
           version: { increment: 1 },
         },
       });

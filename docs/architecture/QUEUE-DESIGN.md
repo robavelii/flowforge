@@ -89,16 +89,16 @@ Examples:
   internal.outbox-relay
 ```
 
-| Prefix | Meaning |
-|--------|---------|
-| `workflow.*` | Workflow lifecycle and execution |
-| `webhook.*` | Inbound/outbound webhook processing |
-| `notification.*` | Email, Slack, push notifications |
-| `audit.*` | Audit log writes |
-| `timeline.*` | Activity timeline projection |
-| `search.*` | Search index updates |
-| `cache.*` | Cache invalidation fan-out |
-| `internal.*` | Platform infrastructure jobs |
+| Prefix           | Meaning                             |
+| ---------------- | ----------------------------------- |
+| `workflow.*`     | Workflow lifecycle and execution    |
+| `webhook.*`      | Inbound/outbound webhook processing |
+| `notification.*` | Email, Slack, push notifications    |
+| `audit.*`        | Audit log writes                    |
+| `timeline.*`     | Activity timeline projection        |
+| `search.*`       | Search index updates                |
+| `cache.*`        | Cache invalidation fan-out          |
+| `internal.*`     | Platform infrastructure jobs        |
 
 Redis key prefix: `flowforge:bull:` (configured via BullMQ `prefix` option).
 
@@ -106,22 +106,22 @@ Redis key prefix: `flowforge:bull:` (configured via BullMQ `prefix` option).
 
 ## Queue Inventory
 
-| Queue | Producer | Consumer | Default Concurrency | Max Job Time | Description |
-|-------|----------|----------|---------------------|--------------|-------------|
-| `workflow.execution` | API, Scheduler, Outbox | Execution worker | 20 | 30 min | Standard workflow runs |
-| `workflow.execution.priority` | API (manual replay, premium) | Execution worker | 10 | 30 min | High-priority executions |
-| `workflow.scheduler` | Outbox | Scheduler worker | 2 | 5 min | Register/update cron triggers |
-| `webhook.inbound` | API | Webhook worker | 30 | 30 sec | Parse & dedup incoming webhooks |
-| `webhook.outbound` | Outbox | Webhook worker | 20 | 60 sec | Deliver outbound webhooks |
-| `notification.send` | Outbox | Notification worker | 10 | 2 min | Send emails/Slack |
-| `audit.write` | Outbox | Audit worker | 5 | 30 sec | Persist audit records |
-| `timeline.project` | Outbox | Timeline worker | 5 | 30 sec | Project timeline events |
-| `search.index` | Outbox | Search worker | 3 | 2 min | Update FTS indexes |
-| `cache.invalidate` | Outbox | Cache worker | 5 | 10 sec | Redis cache invalidation |
-| `metrics.aggregate` | Outbox | Metrics worker | 3 | 1 min | Roll up execution metrics |
-| `file.process` | API | File worker | 3 | 5 min | Virus scan, thumbnail (future) |
-| `internal.outbox-relay` | Cron (repeatable) | Relay worker | 1 | 30 sec | Poll outbox table |
-| `internal.cleanup` | Cron | Cleanup worker | 1 | 10 min | Expire idempotency keys, old logs |
+| Queue                         | Producer                     | Consumer            | Default Concurrency | Max Job Time | Description                       |
+| ----------------------------- | ---------------------------- | ------------------- | ------------------- | ------------ | --------------------------------- |
+| `workflow.execution`          | API, Scheduler, Outbox       | Execution worker    | 20                  | 30 min       | Standard workflow runs            |
+| `workflow.execution.priority` | API (manual replay, premium) | Execution worker    | 10                  | 30 min       | High-priority executions          |
+| `workflow.scheduler`          | Outbox                       | Scheduler worker    | 2                   | 5 min        | Register/update cron triggers     |
+| `webhook.inbound`             | API                          | Webhook worker      | 30                  | 30 sec       | Parse & dedup incoming webhooks   |
+| `webhook.outbound`            | Outbox                       | Webhook worker      | 20                  | 60 sec       | Deliver outbound webhooks         |
+| `notification.send`           | Outbox                       | Notification worker | 10                  | 2 min        | Send emails/Slack                 |
+| `audit.write`                 | Outbox                       | Audit worker        | 5                   | 30 sec       | Persist audit records             |
+| `timeline.project`            | Outbox                       | Timeline worker     | 5                   | 30 sec       | Project timeline events           |
+| `search.index`                | Outbox                       | Search worker       | 3                   | 2 min        | Update FTS indexes                |
+| `cache.invalidate`            | Outbox                       | Cache worker        | 5                   | 10 sec       | Redis cache invalidation          |
+| `metrics.aggregate`           | Outbox                       | Metrics worker      | 3                   | 1 min        | Roll up execution metrics         |
+| `file.process`                | API                          | File worker         | 3                   | 5 min        | Virus scan, thumbnail (future)    |
+| `internal.outbox-relay`       | Cron (repeatable)            | Relay worker        | 1                   | 30 sec       | Poll outbox table                 |
+| `internal.cleanup`            | Cron                         | Cleanup worker      | 1                   | 10 min       | Expire idempotency keys, old logs |
 
 ---
 
@@ -137,12 +137,12 @@ Premium workspaces and manual execution replays route to `workflow.execution.pri
 
 Within standard queue:
 
-| Priority Value | Use Case |
-|----------------|----------|
-| 1 | User-initiated test runs |
-| 5 | Real-time webhook triggers |
-| 10 | Default scheduled/cron executions |
-| 20 | Bulk replay / backfill jobs |
+| Priority Value | Use Case                          |
+| -------------- | --------------------------------- |
+| 1              | User-initiated test runs          |
+| 5              | Real-time webhook triggers        |
+| 10             | Default scheduled/cron executions |
+| 20             | Bulk replay / backfill jobs       |
 
 ### Tier 3: Delayed Jobs
 
@@ -168,14 +168,14 @@ const defaultJobOptions = {
 
 ### Per-Queue Overrides
 
-| Queue | Attempts | Backoff | Notes |
-|-------|----------|---------|-------|
-| `workflow.execution` | 3 (job level) | exponential 5s | Node retries handled separately inside engine |
-| `webhook.outbound` | 8 | exponential 30s, max 1h | Respect `Retry-After` from subscriber |
-| `webhook.inbound` | 3 | fixed 1s | Fast fail; poison → DLQ |
-| `notification.send` | 5 | exponential 10s | Provider rate limits → delay |
-| `audit.write` | 10 | exponential 2s | Must not lose audit data |
-| `internal.outbox-relay` | 1 | — | Repeatable job; next tick retries |
+| Queue                   | Attempts      | Backoff                 | Notes                                         |
+| ----------------------- | ------------- | ----------------------- | --------------------------------------------- |
+| `workflow.execution`    | 3 (job level) | exponential 5s          | Node retries handled separately inside engine |
+| `webhook.outbound`      | 8             | exponential 30s, max 1h | Respect `Retry-After` from subscriber         |
+| `webhook.inbound`       | 3             | fixed 1s                | Fast fail; poison → DLQ                       |
+| `notification.send`     | 5             | exponential 10s         | Provider rate limits → delay                  |
+| `audit.write`           | 10            | exponential 2s          | Must not lose audit data                      |
+| `internal.outbox-relay` | 1             | —                       | Repeatable job; next tick retries             |
 
 ### Node-Level Retries (Execution Engine)
 
@@ -213,22 +213,22 @@ Each DLQ job retains:
 
 ### DLQ Processing
 
-| Action | Method |
-|--------|--------|
-| Inspect | Admin API `GET /admin/dlq?queue=webhook.outbound` |
-| Replay single | `POST /admin/dlq/:jobId/replay` |
-| Replay batch | `POST /admin/dlq/replay` with filters |
-| Discard | `DELETE /admin/dlq/:jobId` (requires `system:admin`) |
-| Auto-expire | DLQ jobs expire after 30 days (configurable) |
+| Action        | Method                                               |
+| ------------- | ---------------------------------------------------- |
+| Inspect       | Admin API `GET /admin/dlq?queue=webhook.outbound`    |
+| Replay single | `POST /admin/dlq/:jobId/replay`                      |
+| Replay batch  | `POST /admin/dlq/replay` with filters                |
+| Discard       | `DELETE /admin/dlq/:jobId` (requires `system:admin`) |
+| Auto-expire   | DLQ jobs expire after 30 days (configurable)         |
 
 ### Alert Thresholds
 
-| Queue DLQ | Alert Condition |
-|-----------|-----------------|
-| Any | > 0 jobs in 5 min window → Warning |
-| `webhook.outbound.dlq` | > 50 jobs/hour → Critical |
-| `workflow.execution.dlq` | > 10 jobs/hour → Critical |
-| `audit.write.dlq` | > 0 → Critical (immediate) |
+| Queue DLQ                | Alert Condition                    |
+| ------------------------ | ---------------------------------- |
+| Any                      | > 0 jobs in 5 min window → Warning |
+| `webhook.outbound.dlq`   | > 50 jobs/hour → Critical          |
+| `workflow.execution.dlq` | > 10 jobs/hour → Critical          |
+| `audit.write.dlq`        | > 0 → Critical (immediate)         |
 
 ---
 
@@ -247,12 +247,12 @@ WorkerProcess
 
 ### Deployment Profiles
 
-| Profile | Queues | Instances | Concurrency |
-|---------|--------|-----------|-------------|
-| `worker-execution` | execution, execution.priority | 2–N (auto-scale) | 20 each |
-| `worker-webhook` | inbound, outbound | 2 | 20 each |
-| `worker-projection` | audit, timeline, search, cache | 1–2 | 5 each |
-| `worker-internal` | outbox-relay, cleanup, scheduler | 1 | 1–2 |
+| Profile             | Queues                           | Instances        | Concurrency |
+| ------------------- | -------------------------------- | ---------------- | ----------- |
+| `worker-execution`  | execution, execution.priority    | 2–N (auto-scale) | 20 each     |
+| `worker-webhook`    | inbound, outbound                | 2                | 20 each     |
+| `worker-projection` | audit, timeline, search, cache   | 1–2              | 5 each      |
+| `worker-internal`   | outbox-relay, cleanup, scheduler | 1                | 1–2         |
 
 Environment variable `WORKER_PROFILES=execution,webhook` controls which modules boot in a given process.
 
@@ -282,7 +282,7 @@ interface JobEnvelope<T = unknown> {
   payload: T;
   metadata?: {
     source: 'api' | 'outbox' | 'scheduler' | 'retry';
-    eventId?: string;       // link to outbox event
+    eventId?: string; // link to outbox event
     executionId?: string;
     priority?: number;
   };
@@ -291,10 +291,10 @@ interface JobEnvelope<T = unknown> {
 
 ### Size Limits
 
-| Queue | Max Payload | Oversize Handling |
-|-------|-------------|-------------------|
-| All | 256 KB default | Store payload in Postgres/MinIO; job carries reference ID |
-| `workflow.execution` | 1 MB | Large trigger payloads stored in `execution_trigger_data` table |
+| Queue                | Max Payload    | Oversize Handling                                               |
+| -------------------- | -------------- | --------------------------------------------------------------- |
+| All                  | 256 KB default | Store payload in Postgres/MinIO; job carries reference ID       |
+| `workflow.execution` | 1 MB           | Large trigger payloads stored in `execution_trigger_data` table |
 
 ---
 
@@ -302,12 +302,12 @@ interface JobEnvelope<T = unknown> {
 
 ### Repeatable Jobs
 
-| Job | Pattern | Queue |
-|-----|---------|-------|
-| Outbox relay poll | Every 500ms | `internal.outbox-relay` |
-| Idempotency key cleanup | `0 */6 * * *` | `internal.cleanup` |
-| Stale execution watchdog | `*/5 * * * *` | `internal.cleanup` |
-| DLQ metrics emit | `* * * * *` | `internal.cleanup` |
+| Job                      | Pattern       | Queue                   |
+| ------------------------ | ------------- | ----------------------- |
+| Outbox relay poll        | Every 500ms   | `internal.outbox-relay` |
+| Idempotency key cleanup  | `0 */6 * * *` | `internal.cleanup`      |
+| Stale execution watchdog | `*/5 * * * *` | `internal.cleanup`      |
+| DLQ metrics emit         | `* * * * *`   | `internal.cleanup`      |
 
 ### Workflow Cron Triggers
 

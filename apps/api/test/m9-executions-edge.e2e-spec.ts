@@ -3,12 +3,7 @@ import { ExecutionStatus, ExecutionTriggerType } from '@prisma/client';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/persistence/prisma.service';
-import {
-  IdBody,
-  SIMPLE_GRAPH,
-  createE2eApp,
-  registerOwnerWorkspace,
-} from './helpers/e2e-app';
+import { IdBody, SIMPLE_GRAPH, createE2eApp, registerOwnerWorkspace } from './helpers/e2e-app';
 
 describe('M9 Executions & schedules edge (e2e)', () => {
   let app: INestApplication<App>;
@@ -38,8 +33,8 @@ describe('M9 Executions & schedules edge (e2e)', () => {
       .set('X-Workspace-Id', workspaceId)
       .send({ expectedVersion: (created.body as IdBody).version })
       .expect(200);
-    workflowVersionId = (published.body as { publishedVersion?: { id: string } })
-      .publishedVersion?.id!;
+    workflowVersionId = (published.body as { publishedVersion?: { id: string } }).publishedVersion
+      ?.id!;
     if (!workflowVersionId) {
       const wf = await prisma.workflow.findUniqueOrThrow({ where: { id: workflowId } });
       workflowVersionId = wf.publishedVersionId!;

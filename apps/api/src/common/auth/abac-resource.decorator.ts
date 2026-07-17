@@ -8,6 +8,5 @@ export type AbacResourceResolver = (
   request: Record<string, unknown>,
 ) => AbacResourceContext | Promise<AbacResourceContext | undefined> | undefined;
 
-export const AbacResource = (
-  resolver: AbacResourceResolver,
-): ReturnType<typeof SetMetadata> => SetMetadata(ABAC_RESOURCE_KEY, resolver);
+export const AbacResource = (resolver: AbacResourceResolver): ReturnType<typeof SetMetadata> =>
+  SetMetadata(ABAC_RESOURCE_KEY, resolver);

@@ -61,10 +61,7 @@ export class WorkspacesController {
   @ApiOperation({ summary: 'Get workspace by id' })
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiOkResponse({ type: WorkspaceResponseDto })
-  get(
-    @CurrentUser() user: AuthUser,
-    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
-  ) {
+  get(@CurrentUser() user: AuthUser, @Param('workspaceId', ParseUUIDPipe) workspaceId: string) {
     return this.workspaces.getById(user.sub, workspaceId);
   }
 

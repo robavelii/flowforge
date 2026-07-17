@@ -91,7 +91,6 @@ async function bootstrap(): Promise<void> {
     },
   });
 
-
   app.enableShutdownHooks();
 
   await app.listen(config.API_PORT, config.API_HOST);

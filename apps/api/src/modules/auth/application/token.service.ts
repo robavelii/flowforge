@@ -4,11 +4,7 @@ import type { ApiConfig } from '@flowforge/config';
 import { APP_CONFIG } from '../../../config/config.constants';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { randomUUID } from 'node:crypto';
-import {
-  generateOpaqueToken,
-  parseDurationMs,
-  sha256,
-} from '../../../common/utils/crypto.util';
+import { generateOpaqueToken, parseDurationMs, sha256 } from '../../../common/utils/crypto.util';
 
 export type TokenPair = {
   accessToken: string;

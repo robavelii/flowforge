@@ -12,10 +12,7 @@ export class PrismaReadService implements OnModuleInit, OnModuleDestroy {
   readonly client: PrismaClient | PrismaService;
   private readonly ownsClient: boolean;
 
-  constructor(
-    @Inject(APP_CONFIG) config: ApiConfig,
-    primary: PrismaService,
-  ) {
+  constructor(@Inject(APP_CONFIG) config: ApiConfig, primary: PrismaService) {
     if (config.DATABASE_REPLICA_URL) {
       this.client = new PrismaClient({
         datasources: { db: { url: config.DATABASE_REPLICA_URL } },

@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { ApiConfig } from '@flowforge/config';
 import { APP_CONFIG } from '../../../config/config.constants';
 import { PrismaService } from '../../../persistence/prisma.service';
@@ -35,7 +30,9 @@ export class AuthService {
     @Inject(APP_CONFIG) private readonly config: ApiConfig,
   ) {}
 
-  async register(input: RegisterInput): Promise<{ user: { id: string; email: string; name: string }; tokens: TokenPair }> {
+  async register(
+    input: RegisterInput,
+  ): Promise<{ user: { id: string; email: string; name: string }; tokens: TokenPair }> {
     const email = input.email.toLowerCase().trim();
     const existing = await this.prisma.user.findFirst({
       where: { email, deletedAt: null },
@@ -88,7 +85,9 @@ export class AuthService {
     };
   }
 
-  async login(input: LoginInput): Promise<{ user: { id: string; email: string; name: string }; tokens: TokenPair }> {
+  async login(
+    input: LoginInput,
+  ): Promise<{ user: { id: string; email: string; name: string }; tokens: TokenPair }> {
     const email = input.email.toLowerCase().trim();
     const user = await this.prisma.user.findFirst({
       where: { email, deletedAt: null },
@@ -180,25 +179,27 @@ export class AuthService {
       createdAt: Date;
     }>
   > {
-    return this.prisma.session.findMany({
-      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
-      orderBy: { lastActiveAt: 'desc' },
-      select: {
-        id: true,
-        ipAddress: true,
-        userAgent: true,
-        lastActiveAt: true,
-        expiresAt: true,
-        createdAt: true,
-      },
-    }).then((sessions) =>
-      sessions.map((s) => ({ ...s, current: false })),
-    );
+    return this.prisma.session
+      .findMany({
+        where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: { lastActiveAt: 'desc' },
+        select: {
+          id: true,
+          ipAddress: true,
+          userAgent: true,
+          lastActiveAt: true,
+          expiresAt: true,
+          createdAt: true,
+        },
+      })
+      .then((sessions) => sessions.map((s) => ({ ...s, current: false })));
   }
 
   async revokeSession(userId: string, sessionId: string, currentSessionId: string): Promise<void> {
     if (sessionId === currentSessionId) {
-      throw new UnauthorizedException('Cannot revoke the current session via this endpoint; use logout');
+      throw new UnauthorizedException(
+        'Cannot revoke the current session via this endpoint; use logout',
+      );
     }
     await this.prisma.$transaction([
       this.prisma.session.updateMany({
@@ -212,7 +213,12 @@ export class AuthService {
     ]);
   }
 
-  async changePassword(userId: string, currentSessionId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    currentSessionId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await this.prisma.user.findFirst({
       where: { id: userId, deletedAt: null },
     });

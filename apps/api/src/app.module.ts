@@ -39,7 +39,10 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
       useFactory: (config: ApiConfig) => {
         const pinoHttp: Record<string, unknown> = {
           level: config.LOG_LEVEL,
-          genReqId: (req: { headers: Record<string, string | string[] | undefined>; id?: string }) => {
+          genReqId: (req: {
+            headers: Record<string, string | string[] | undefined>;
+            id?: string;
+          }) => {
             const header = req.headers['x-correlation-id'];
             return typeof header === 'string' ? header : randomUUID();
           },

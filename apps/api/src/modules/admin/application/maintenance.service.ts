@@ -19,11 +19,14 @@ export class MaintenanceService implements OnModuleInit, OnModuleDestroy {
     if (process.env['NODE_ENV'] === 'test') {
       return;
     }
-    this.timer = setInterval(() => {
-      void this.cleanup().catch((err: unknown) => {
-        this.logger.error({ err }, 'Cleanup job failed');
-      });
-    }, 60 * 60 * 1000);
+    this.timer = setInterval(
+      () => {
+        void this.cleanup().catch((err: unknown) => {
+          this.logger.error({ err }, 'Cleanup job failed');
+        });
+      },
+      60 * 60 * 1000,
+    );
   }
 
   onModuleDestroy(): void {
@@ -34,9 +37,7 @@ export class MaintenanceService implements OnModuleInit, OnModuleDestroy {
   }
 
   async cleanup(workspaceId?: string) {
-    const cutoff = new Date(
-      Date.now() - this.config.CLEANUP_RETENTION_DAYS * 24 * 60 * 60 * 1000,
-    );
+    const cutoff = new Date(Date.now() - this.config.CLEANUP_RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
     const [outbox, inbox, idempotency] = await this.prisma.$transaction([
       this.prisma.outboxEvent.deleteMany({

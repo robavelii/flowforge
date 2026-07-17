@@ -67,11 +67,7 @@ export class SearchService {
     });
   }
 
-  async removeDocument(
-    workspaceId: string,
-    entityType: string,
-    entityId: string,
-  ): Promise<void> {
+  async removeDocument(workspaceId: string, entityType: string, entityId: string): Promise<void> {
     await this.prisma.searchDocument.deleteMany({
       where: { workspaceId, entityType, entityId },
     });
@@ -81,11 +77,7 @@ export class SearchService {
     await this.removeDocument(workspaceId, 'workflow', workflowId);
   }
 
-  async search(
-    workspaceId: string,
-    query: string,
-    opts?: { limit?: number; entityType?: string },
-  ) {
+  async search(workspaceId: string, query: string, opts?: { limit?: number; entityType?: string }) {
     const q = query.trim();
     const limit = Math.min(opts?.limit ?? 20, 50);
     if (!q) {

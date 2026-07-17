@@ -47,12 +47,12 @@ flowchart LR
 
 ## Branch Strategy
 
-| Branch | Purpose | Deploy Target |
-|--------|---------|---------------|
-| `main` | Production-ready code | Staging (auto), Production (manual/tag) |
-| `feature/*` | Feature development | Preview (future) |
-| `fix/*` | Bug fixes | — |
-| `release/*` | Release stabilization | Staging |
+| Branch      | Purpose               | Deploy Target                           |
+| ----------- | --------------------- | --------------------------------------- |
+| `main`      | Production-ready code | Staging (auto), Production (manual/tag) |
+| `feature/*` | Feature development   | Preview (future)                        |
+| `fix/*`     | Bug fixes             | —                                       |
+| `release/*` | Release stabilization | Staging                                 |
 
 ### Commit Convention
 
@@ -215,17 +215,17 @@ jobs:
 
 ## Quality Gates
 
-| Gate | Tool | Threshold | Blocking |
-|------|------|-----------|----------|
-| Lint | ESLint | 0 errors | Yes |
-| Format | Prettier | 0 diffs | Yes |
-| Types | TypeScript strict | 0 errors | Yes |
-| Unit tests | Jest | 100% pass | Yes |
-| Coverage | Jest | ≥ 80% lines (M3+) | Warning → Yes (M5+) |
-| Migration | Prisma | Clean deploy on fresh DB | Yes |
-| Build | Turborepo | All packages build | Yes |
-| Docs | Docusaurus | Site builds | Yes |
-| Container scan | Trivy | No critical CVEs | Yes |
+| Gate           | Tool              | Threshold                | Blocking            |
+| -------------- | ----------------- | ------------------------ | ------------------- |
+| Lint           | ESLint            | 0 errors                 | Yes                 |
+| Format         | Prettier          | 0 diffs                  | Yes                 |
+| Types          | TypeScript strict | 0 errors                 | Yes                 |
+| Unit tests     | Jest              | 100% pass                | Yes                 |
+| Coverage       | Jest              | ≥ 80% lines (M3+)        | Warning → Yes (M5+) |
+| Migration      | Prisma            | Clean deploy on fresh DB | Yes                 |
+| Build          | Turborepo         | All packages build       | Yes                 |
+| Docs           | Docusaurus        | Site builds              | Yes                 |
+| Container scan | Trivy             | No critical CVEs         | Yes                 |
 
 ### Turborepo Caching
 
@@ -341,12 +341,15 @@ PATCH — Bug fixes
 ## [1.2.0] - 2026-07-14
 
 ### Added
+
 - Workflow rollback endpoint (#142)
 
 ### Fixed
+
 - Refresh token rotation race condition (#138)
 
 ### Changed
+
 - Increased default API rate limit for elevated keys (#140)
 ```
 
@@ -356,29 +359,29 @@ PATCH — Bug fixes
 
 ### GitHub Secrets
 
-| Secret | Used By |
-|--------|---------|
-| `STAGING_DATABASE_URL` | Staging migration |
+| Secret                    | Used By              |
+| ------------------------- | -------------------- |
+| `STAGING_DATABASE_URL`    | Staging migration    |
 | `PRODUCTION_DATABASE_URL` | Production migration |
-| `KUBE_CONFIG_STAGING` | Staging deploy |
-| `KUBE_CONFIG_PRODUCTION` | Production deploy |
-| `SLACK_WEBHOOK_URL` | Deploy notifications |
-| `TURBO_TOKEN` | Remote cache |
+| `KUBE_CONFIG_STAGING`     | Staging deploy       |
+| `KUBE_CONFIG_PRODUCTION`  | Production deploy    |
+| `SLACK_WEBHOOK_URL`       | Deploy notifications |
+| `TURBO_TOKEN`             | Remote cache         |
 
 ### GitHub Variables
 
-| Variable | Value |
-|----------|-------|
-| `STAGING_URL` | `https://staging.flowforge.dev` |
-| `PRODUCTION_URL` | `https://api.flowforge.dev` |
-| `NODE_VERSION` | `20` |
+| Variable         | Value                           |
+| ---------------- | ------------------------------- |
+| `STAGING_URL`    | `https://staging.flowforge.dev` |
+| `PRODUCTION_URL` | `https://api.flowforge.dev`     |
+| `NODE_VERSION`   | `20`                            |
 
 ### Environment Protection Rules
 
-| Environment | Reviewers | Wait Timer |
-|-------------|-----------|------------|
-| staging | 0 (auto) | 0 |
-| production | 2 required | 5 min |
+| Environment | Reviewers  | Wait Timer |
+| ----------- | ---------- | ---------- |
+| staging     | 0 (auto)   | 0          |
+| production  | 2 required | 5 min      |
 
 ---
 

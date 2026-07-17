@@ -15,9 +15,7 @@ import { CompositeAuthGuard } from '../../common/auth/composite-auth.guard';
     JwtModule.registerAsync({
       inject: [APP_CONFIG],
       useFactory: (config: ApiConfig) => ({
-        secret:
-          config.JWT_SECRET ??
-          'flowforge-dev-jwt-secret-change-me-min-32-chars',
+        secret: config.JWT_SECRET ?? 'flowforge-dev-jwt-secret-change-me-min-32-chars',
         signOptions: {
           expiresIn: config.JWT_ACCESS_EXPIRES_IN as `${number}${'s' | 'm' | 'h' | 'd'}`,
         },

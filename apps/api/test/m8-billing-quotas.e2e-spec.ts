@@ -155,7 +155,10 @@ describe('Billing Quotas & Platform M8 (e2e)', () => {
           periodStart,
         },
       },
-      update: { currentValue: BigInt(plan.executionsPerMonth), limitValue: BigInt(plan.executionsPerMonth) },
+      update: {
+        currentValue: BigInt(plan.executionsPerMonth),
+        limitValue: BigInt(plan.executionsPerMonth),
+      },
       create: {
         workspaceId,
         metric: 'executions',

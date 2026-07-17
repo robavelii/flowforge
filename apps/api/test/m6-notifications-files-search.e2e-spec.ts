@@ -246,8 +246,10 @@ describe('Notifications, Files & Search M6 (e2e)', () => {
       .set('X-Workspace-Id', workspaceId)
       .expect(200);
 
-    expect((ftsBody.body as { data: Array<{ entityType: string }> }).data.some((d) => d.entityType === 'workflow')).toBe(
-      true,
-    );
+    expect(
+      (ftsBody.body as { data: Array<{ entityType: string }> }).data.some(
+        (d) => d.entityType === 'workflow',
+      ),
+    ).toBe(true);
   });
 });

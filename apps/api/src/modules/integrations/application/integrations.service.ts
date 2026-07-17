@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { IntegrationProvider, IntegrationStatus } from '@prisma/client';
 import type { ApiConfig } from '@flowforge/config';
@@ -62,11 +58,7 @@ export class IntegrationsService {
     return rows.map((r) => this.toDto(r));
   }
 
-  startConnect(
-    workspaceId: string,
-    userId: string,
-    provider: IntegrationProvider,
-  ) {
+  startConnect(workspaceId: string, userId: string, provider: IntegrationProvider) {
     if (!this.isConfigured(provider) && process.env['NODE_ENV'] !== 'test') {
       throw new BadRequestException(
         `${provider} OAuth is not configured (missing client id/secret)`,
@@ -175,10 +167,7 @@ export class IntegrationsService {
     scopes: string[];
     expiresAt?: Date | null;
   }) {
-    const accessTokenEnc = encryptSecret(
-      params.accessToken,
-      this.config.SECRETS_ENCRYPTION_KEY,
-    );
+    const accessTokenEnc = encryptSecret(params.accessToken, this.config.SECRETS_ENCRYPTION_KEY);
     const refreshTokenEnc = params.refreshToken
       ? encryptSecret(params.refreshToken, this.config.SECRETS_ENCRYPTION_KEY)
       : null;
@@ -251,15 +240,12 @@ export class IntegrationsService {
       throw new BadRequestException('OAuth token exchange failed');
     }
     const json = (await response.json()) as Record<string, unknown>;
-    const accessToken =
-      typeof json['access_token'] === 'string' ? json['access_token'] : '';
+    const accessToken = typeof json['access_token'] === 'string' ? json['access_token'] : '';
     if (!accessToken) {
       throw new BadRequestException('OAuth token missing');
     }
-    const refreshToken =
-      typeof json['refresh_token'] === 'string' ? json['refresh_token'] : null;
-    const scope =
-      typeof json['scope'] === 'string' ? json['scope'] : def.scopes.join(' ');
+    const refreshToken = typeof json['refresh_token'] === 'string' ? json['refresh_token'] : null;
+    const scope = typeof json['scope'] === 'string' ? json['scope'] : def.scopes.join(' ');
     return {
       accessToken,
       refreshToken,

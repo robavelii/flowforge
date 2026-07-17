@@ -11,15 +11,20 @@ export class BillingService {
   ) {}
 
   listPlans() {
-    return this.prisma.plan.findMany({
-      orderBy: { executionsPerMonth: 'asc' },
-    }).then((rows) => rows.map((p) => this.toPlanDto(p)));
+    return this.prisma.plan
+      .findMany({
+        orderBy: { executionsPerMonth: 'asc' },
+      })
+      .then((rows) => rows.map((p) => this.toPlanDto(p)));
   }
 
   async getSubscription(workspaceId: string) {
     const plan = await this.quotas.resolvePlan(workspaceId);
     let sub = await this.prisma.subscription.findFirst({
-      where: { workspaceId, status: { in: [SubscriptionStatus.active, SubscriptionStatus.trialing] } },
+      where: {
+        workspaceId,
+        status: { in: [SubscriptionStatus.active, SubscriptionStatus.trialing] },
+      },
       orderBy: { createdAt: 'desc' },
       include: { plan: true },
     });

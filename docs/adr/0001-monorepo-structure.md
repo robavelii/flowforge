@@ -73,11 +73,11 @@ flowforge/
 
 ## Alternatives Rejected
 
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-| Single NestJS app | Worker scaling requires separate process; would fight framework conventions |
-| Polyrepo | Shared types require published npm packages; slows iteration; overkill for portfolio |
-| Nx monorepo | Heavier tooling; Turborepo sufficient for 3–5 apps |
+| Alternative       | Reason Rejected                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| Single NestJS app | Worker scaling requires separate process; would fight framework conventions          |
+| Polyrepo          | Shared types require published npm packages; slows iteration; overkill for portfolio |
+| Nx monorepo       | Heavier tooling; Turborepo sufficient for 3–5 apps                                   |
 
 ## References
 

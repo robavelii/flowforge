@@ -1,14 +1,5 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  ExecutionStatus,
-  ExecutionTriggerType,
-  Prisma,
-  WorkflowStatus,
-} from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ExecutionStatus, ExecutionTriggerType, Prisma, WorkflowStatus } from '@prisma/client';
 import { runExecution } from '@flowforge/execution-engine';
 import { PrismaReadService } from '../../../persistence/prisma-read.service';
 import { PrismaService } from '../../../persistence/prisma.service';
@@ -28,7 +19,10 @@ export class ExecutionsService {
     private readonly quotas: QuotaService,
   ) {}
 
-  async list(workspaceId: string, opts: { workflowId?: string; status?: string; limit: number; cursor?: string }) {
+  async list(
+    workspaceId: string,
+    opts: { workflowId?: string; status?: string; limit: number; cursor?: string },
+  ) {
     const items = await this.read.client.workflowExecution.findMany({
       where: {
         workspaceId,
@@ -44,7 +38,7 @@ export class ExecutionsService {
     return {
       data: data.map((e) => this.toSummary(e)),
       meta: {
-        nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (data[data.length - 1]?.id ?? null) : null,
         prevCursor: null,
         hasMore,
       },
@@ -114,7 +108,9 @@ export class ExecutionsService {
     // Prefer published version; fall back requires a temporary version from draft for sandbox
     const versionId = workflow.publishedVersionId;
     if (!versionId) {
-      throw new BadRequestException('Publish the workflow before running a test, or publish a draft first');
+      throw new BadRequestException(
+        'Publish the workflow before running a test, or publish a draft first',
+      );
     }
 
     return this.createAndEnqueue({

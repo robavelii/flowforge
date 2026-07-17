@@ -38,13 +38,13 @@ flowchart LR
 
 ### Goals
 
-| Goal | Approach |
-|------|----------|
+| Goal                          | Approach                                                |
+| ----------------------------- | ------------------------------------------------------- |
 | Reduce DB reads for hot paths | Read-through cache for permissions, workflows, API keys |
-| Sub-10ms authz checks | Permission bitmap cache per `(userId, workspaceId)` |
-| Tenant isolation | All keys prefixed with `ws:{workspaceId}:` |
-| Safe invalidation | Event-driven invalidation via outbox consumers |
-| Graceful degradation | Cache miss → DB; Redis down → bypass cache |
+| Sub-10ms authz checks         | Permission bitmap cache per `(userId, workspaceId)`     |
+| Tenant isolation              | All keys prefixed with `ws:{workspaceId}:`              |
+| Safe invalidation             | Event-driven invalidation via outbox consumers          |
+| Graceful degradation          | Cache miss → DB; Redis down → bypass cache              |
 
 ### Non-Goals
 
@@ -58,24 +58,24 @@ flowchart LR
 
 ### L1 — In-Process (Request-Scoped / Short LRU)
 
-| Property | Value |
-|----------|-------|
-| Store | Node.js `lru-cache` per worker/API instance |
-| Max entries | 1,000 per cache namespace |
-| Default TTL | 30 seconds |
-| Use cases | Repeated reads within same request; config snapshots |
+| Property    | Value                                                |
+| ----------- | ---------------------------------------------------- |
+| Store       | Node.js `lru-cache` per worker/API instance          |
+| Max entries | 1,000 per cache namespace                            |
+| Default TTL | 30 seconds                                           |
+| Use cases   | Repeated reads within same request; config snapshots |
 
 L1 is **never authoritative**. Always fall through to L2 on miss.
 
 ### L2 — Redis (Distributed)
 
-| Property | Value |
-|----------|-------|
-| Store | Redis 7+ (single primary + replicas in production) |
-| Connection | `REDIS_URL` from `@flowforge/config` |
-| Serialization | JSON for objects; raw strings for simple values |
-| Default TTL | Varies by entity (see catalog) |
-| Max memory policy | `allkeys-lru` with 80% memory alert |
+| Property          | Value                                              |
+| ----------------- | -------------------------------------------------- |
+| Store             | Redis 7+ (single primary + replicas in production) |
+| Connection        | `REDIS_URL` from `@flowforge/config`               |
+| Serialization     | JSON for objects; raw strings for simple values    |
+| Default TTL       | Varies by entity (see catalog)                     |
+| Max memory policy | `allkeys-lru` with 80% memory alert                |
 
 ### L3 — PostgreSQL (Source of Truth)
 
@@ -111,22 +111,22 @@ flowforge:oauth:state:{stateToken}
 
 ## Cache Catalog
 
-| Namespace | Key Pattern | TTL | Size Est. | Cached Data |
-|-----------|-------------|-----|-----------|-------------|
-| `perm` | `perm:ws:{wsId}:user:{userId}` | 5 min | ~2 KB | Resolved permission set (flattened strings) |
-| `perm` | `perm:ws:{wsId}:role:{roleId}` | 10 min | ~1 KB | Role → permissions mapping |
-| `workflow` | `workflow:ws:{wsId}:published:{wfId}` | 15 min | 10–500 KB | Published workflow graph + version metadata |
-| `workflow` | `workflow:ws:{wsId}:meta:{wfId}` | 5 min | ~1 KB | Workflow list card metadata |
-| `apikey` | `apikey:hash:{sha256Prefix}` | 10 min | ~500 B | `{ apiKeyId, workspaceId, scopes, expiresAt }` |
-| `session` | `session:{sessionId}` | 15 min | ~500 B | Session validity + userId |
-| `workspace` | `workspace:{wsId}` | 10 min | ~2 KB | Workspace settings, plan, feature flags |
-| `secret` | `secret:ws:{wsId}:ref:{secretId}` | 5 min | ~200 B | Secret existence check (never cache plaintext) |
-| `integration` | `integration:ws:{wsId}:{provider}` | 10 min | ~1 KB | OAuth token metadata (not access token) |
-| `ratelimit` | `ratelimit:ws:{wsId}:{actor}:{window}` | window size | ~100 B | Sliding window counter |
-| `idempotency` | `idempotency:{key}:{fingerprint}` | 24 h | variable | Cached HTTP response |
-| `oauth` | `oauth:state:{token}` | 10 min | ~200 B | OAuth CSRF state |
-| `webhook` | `webhook:ws:{wsId}:endpoint:{slug}` | 5 min | ~1 KB | Endpoint config for ingress routing |
-| `lock` | `lock:{resource}` | 30 sec | ~50 B | Distributed lock (Redlock) |
+| Namespace     | Key Pattern                            | TTL         | Size Est. | Cached Data                                    |
+| ------------- | -------------------------------------- | ----------- | --------- | ---------------------------------------------- |
+| `perm`        | `perm:ws:{wsId}:user:{userId}`         | 5 min       | ~2 KB     | Resolved permission set (flattened strings)    |
+| `perm`        | `perm:ws:{wsId}:role:{roleId}`         | 10 min      | ~1 KB     | Role → permissions mapping                     |
+| `workflow`    | `workflow:ws:{wsId}:published:{wfId}`  | 15 min      | 10–500 KB | Published workflow graph + version metadata    |
+| `workflow`    | `workflow:ws:{wsId}:meta:{wfId}`       | 5 min       | ~1 KB     | Workflow list card metadata                    |
+| `apikey`      | `apikey:hash:{sha256Prefix}`           | 10 min      | ~500 B    | `{ apiKeyId, workspaceId, scopes, expiresAt }` |
+| `session`     | `session:{sessionId}`                  | 15 min      | ~500 B    | Session validity + userId                      |
+| `workspace`   | `workspace:{wsId}`                     | 10 min      | ~2 KB     | Workspace settings, plan, feature flags        |
+| `secret`      | `secret:ws:{wsId}:ref:{secretId}`      | 5 min       | ~200 B    | Secret existence check (never cache plaintext) |
+| `integration` | `integration:ws:{wsId}:{provider}`     | 10 min      | ~1 KB     | OAuth token metadata (not access token)        |
+| `ratelimit`   | `ratelimit:ws:{wsId}:{actor}:{window}` | window size | ~100 B    | Sliding window counter                         |
+| `idempotency` | `idempotency:{key}:{fingerprint}`      | 24 h        | variable  | Cached HTTP response                           |
+| `oauth`       | `oauth:state:{token}`                  | 10 min      | ~200 B    | OAuth CSRF state                               |
+| `webhook`     | `webhook:ws:{wsId}:endpoint:{slug}`    | 5 min       | ~1 KB     | Endpoint config for ingress routing            |
+| `lock`        | `lock:{resource}`                      | 30 sec      | ~50 B     | Distributed lock (Redlock)                     |
 
 ---
 
@@ -191,15 +191,15 @@ sequenceDiagram
 
 The `cache-invalidator` consumer subscribes to domain events and performs targeted invalidation:
 
-| Event | Invalidated Keys |
-|-------|------------------|
-| `MemberAdded`, `MemberRemoved`, `MemberRoleChanged` | `perm:ws:{wsId}:user:{userId}`, all `perm:ws:{wsId}:user:*` if role changed |
-| `WorkflowPublished`, `WorkflowUnpublished`, `WorkflowUpdated`, `WorkflowDeleted` | `workflow:ws:{wsId}:published:{wfId}`, `workflow:ws:{wsId}:meta:{wfId}` |
-| `ApiKeyCreated`, `ApiKeyRevoked` | `apikey:hash:{hash}` |
-| `WorkspaceUpdated` | `workspace:{wsId}`, `feature:ws:{wsId}:flags` |
-| `SecretUpdated`, `SecretDeleted` | `secret:ws:{wsId}:ref:{secretId}` |
-| `IntegrationConnected`, `IntegrationDisconnected` | `integration:ws:{wsId}:{provider}` |
-| `WebhookEndpointUpdated` | `webhook:ws:{wsId}:endpoint:{slug}` |
+| Event                                                                            | Invalidated Keys                                                            |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `MemberAdded`, `MemberRemoved`, `MemberRoleChanged`                              | `perm:ws:{wsId}:user:{userId}`, all `perm:ws:{wsId}:user:*` if role changed |
+| `WorkflowPublished`, `WorkflowUnpublished`, `WorkflowUpdated`, `WorkflowDeleted` | `workflow:ws:{wsId}:published:{wfId}`, `workflow:ws:{wsId}:meta:{wfId}`     |
+| `ApiKeyCreated`, `ApiKeyRevoked`                                                 | `apikey:hash:{hash}`                                                        |
+| `WorkspaceUpdated`                                                               | `workspace:{wsId}`, `feature:ws:{wsId}:flags`                               |
+| `SecretUpdated`, `SecretDeleted`                                                 | `secret:ws:{wsId}:ref:{secretId}`                                           |
+| `IntegrationConnected`, `IntegrationDisconnected`                                | `integration:ws:{wsId}:{provider}`                                          |
+| `WebhookEndpointUpdated`                                                         | `webhook:ws:{wsId}:endpoint:{slug}`                                         |
 
 Invalidation jobs are enqueued to `cache.invalidate` queue (low priority, high throughput).
 
@@ -233,14 +233,14 @@ Mutations **never** update cache directly. Flow:
 
 ## Consistency Model
 
-| Data Type | Consistency | Rationale |
-|-----------|-------------|-----------|
-| Permissions | Eventual (~seconds) | Invalidated on role change; TTL 5 min max staleness |
-| Published workflows | Eventual (~seconds) | Invalidated on publish; execution engine re-fetches at start |
-| API keys | Eventual (~seconds) | Revocation must propagate quickly; TTL 10 min backup |
-| Rate limits | Strong (Redis atomic) | `INCR` + `EXPIRE` in Lua script |
-| Idempotency | Strong | Must prevent duplicate mutations |
-| Sessions | Eventual | Revocation deletes key; TTL backup |
+| Data Type           | Consistency           | Rationale                                                    |
+| ------------------- | --------------------- | ------------------------------------------------------------ |
+| Permissions         | Eventual (~seconds)   | Invalidated on role change; TTL 5 min max staleness          |
+| Published workflows | Eventual (~seconds)   | Invalidated on publish; execution engine re-fetches at start |
+| API keys            | Eventual (~seconds)   | Revocation must propagate quickly; TTL 10 min backup         |
+| Rate limits         | Strong (Redis atomic) | `INCR` + `EXPIRE` in Lua script                              |
+| Idempotency         | Strong                | Must prevent duplicate mutations                             |
+| Sessions            | Eventual              | Revocation deletes key; TTL backup                           |
 
 ### Security-Sensitive Rules
 
@@ -252,12 +252,12 @@ Mutations **never** update cache directly. Flow:
 
 ## Failure Modes
 
-| Failure | Behavior |
-|---------|----------|
-| Redis unavailable | Bypass cache; serve from DB; emit `cache_bypass_total` metric; alert |
-| Redis slow (>50ms p99) | Circuit breaker opens after 5 failures; bypass for 30s |
-| Invalidation job fails | TTL ensures eventual consistency; retry via BullMQ |
-| L1 stale after invalidation | Pub/sub `cache:invalidate` channel clears L1 across instances |
+| Failure                     | Behavior                                                             |
+| --------------------------- | -------------------------------------------------------------------- |
+| Redis unavailable           | Bypass cache; serve from DB; emit `cache_bypass_total` metric; alert |
+| Redis slow (>50ms p99)      | Circuit breaker opens after 5 failures; bypass for 30s               |
+| Invalidation job fails      | TTL ensures eventual consistency; retry via BullMQ                   |
+| L1 stale after invalidation | Pub/sub `cache:invalidate` channel clears L1 across instances        |
 
 ---
 

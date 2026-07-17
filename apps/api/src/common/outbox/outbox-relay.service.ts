@@ -198,11 +198,14 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    if (event.eventType === 'ExecutionQueued' || event.eventType === 'ExecutionFailed' || event.eventType === 'ExecutionCompleted') {
+    if (
+      event.eventType === 'ExecutionQueued' ||
+      event.eventType === 'ExecutionFailed' ||
+      event.eventType === 'ExecutionCompleted'
+    ) {
       const executionId =
         typeof payload['executionId'] === 'string' ? payload['executionId'] : null;
-      const workflowId =
-        typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+      const workflowId = typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
       if (!executionId) {
         return;
       }
@@ -223,9 +226,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
         entityType: 'execution',
         entityId: executionId,
         title: `Execution ${execution.status}`,
-        body: [workflowId, execution.triggerType, execution.errorMessage]
-          .filter(Boolean)
-          .join(' '),
+        body: [workflowId, execution.triggerType, execution.errorMessage].filter(Boolean).join(' '),
         metadata: {
           status: execution.status,
           workflowId,
@@ -273,8 +274,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
     if (event.eventType === 'ExecutionFailed' && event.workspaceId) {
       const executionId =
         typeof payload['executionId'] === 'string' ? payload['executionId'] : null;
-      const workflowId =
-        typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+      const workflowId = typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
       if (!executionId || !workflowId) {
         return;
       }
@@ -287,9 +287,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
             ? payload['errorMessage']
             : 'Execution failed',
         startedByUserId:
-          typeof payload['startedByUserId'] === 'string'
-            ? payload['startedByUserId']
-            : null,
+          typeof payload['startedByUserId'] === 'string' ? payload['startedByUserId'] : null,
       });
     }
   }

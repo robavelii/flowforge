@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ApiKeyStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';

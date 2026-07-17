@@ -1,10 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-export function signWebhookPayload(
-  secret: string,
-  timestamp: string,
-  body: string,
-): string {
+export function signWebhookPayload(secret: string, timestamp: string, body: string): string {
   const base = `${timestamp}.${body}`;
   return createHmac('sha256', secret).update(base).digest('hex');
 }

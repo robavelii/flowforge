@@ -118,8 +118,6 @@ export const SIMPLE_GRAPH = {
       position: { x: 120, y: 0 },
     },
   ],
-  connections: [
-    { sourceKey: 'start', sourcePort: 'out', targetKey: 'set', targetPort: 'in' },
-  ],
+  connections: [{ sourceKey: 'start', sourcePort: 'out', targetKey: 'set', targetPort: 'in' }],
   variables: [],
 };

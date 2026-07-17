@@ -12,14 +12,14 @@ This document defines the **persistence model** for FlowForge in PostgreSQL. The
 
 ### Design Principles
 
-| Principle | Implementation |
-|-----------|----------------|
-| Tenant isolation | `workspace_id` FK on all workspace resources; composite indexes leading with `workspace_id` |
-| Soft delete | `deleted_at` nullable on user-facing entities |
-| Optimistic locking | `version` integer column on `workflows`, `workflow_executions`, `secrets` |
-| Auditability | Append-only `audit_logs`; no UPDATE/DELETE |
-| Event durability | `outbox_events` written in same transaction as mutations |
-| Idempotency | `idempotency_keys` with TTL-based cleanup |
+| Principle          | Implementation                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| Tenant isolation   | `workspace_id` FK on all workspace resources; composite indexes leading with `workspace_id` |
+| Soft delete        | `deleted_at` nullable on user-facing entities                                               |
+| Optimistic locking | `version` integer column on `workflows`, `workflow_executions`, `secrets`                   |
+| Auditability       | Append-only `audit_logs`; no UPDATE/DELETE                                                  |
+| Event durability   | `outbox_events` written in same transaction as mutations                                    |
+| Idempotency        | `idempotency_keys` with TTL-based cleanup                                                   |
 
 ### Conventions
 
@@ -32,6 +32,7 @@ NN  = NOT NULL
 ```
 
 **Standard columns** on most tables:
+
 - `id` UUID PK
 - `created_at` timestamptz NN
 - `updated_at` timestamptz NN
@@ -41,66 +42,66 @@ NN  = NOT NULL
 
 ## 2. Entity Inventory (45 Core Entities)
 
-| # | Entity | Table | Scope | Description |
-|---|--------|-------|-------|-------------|
-| 1 | User | `users` | Global | Platform user account |
-| 2 | OAuthAccount | `oauth_accounts` | Global | Linked OAuth identity |
-| 3 | Session | `sessions` | Global | Login session metadata |
-| 4 | RefreshToken | `refresh_tokens` | Global | JWT refresh token family |
-| 5 | UserPreference | `user_preferences` | Global | Per-user notification/UI prefs |
-| 6 | Organization | `organizations` | Global | Top-level org container |
-| 7 | Workspace | `workspaces` | Org | Tenant isolation boundary |
-| 8 | Project | `projects` | Workspace | Workflow grouping |
-| 9 | WorkspaceMember | `workspace_members` | Workspace | User ↔ workspace membership |
-| 10 | Invitation | `invitations` | Workspace | Pending email invite |
-| 11 | Role | `roles` | Workspace/System | Named permission bundle |
-| 12 | Permission | `permissions` | Global | Permission catalog (read-only seed) |
-| 13 | RolePermission | `role_permissions` | — | Role ↔ permission junction |
-| 14 | MemberRole | `member_roles` | — | Member ↔ role junction |
-| 15 | ResourcePolicy | `resource_policies` | Workspace | ABAC policy per resource |
-| 16 | TenantSetting | `tenant_settings` | Workspace | Key-value tenant config |
-| 17 | QuotaUsage | `quota_usage` | Workspace | Metered usage counters |
-| 18 | FeatureFlag | `feature_flags` | Workspace/Global | Feature toggle state |
-| 19 | ApiKey | `api_keys` | Workspace | Programmatic API credential |
-| 20 | Secret | `secrets` | Workspace | Encrypted credential metadata |
-| 21 | SecretVersion | `secret_versions` | Workspace | Versioned encrypted value |
-| 22 | Workflow | `workflows` | Workspace | Automation definition |
-| 23 | WorkflowDraft | `workflow_drafts` | Workspace | Mutable graph JSON |
-| 24 | WorkflowVersion | `workflow_versions` | Workspace | Immutable published snapshot |
-| 25 | WorkflowNode | `workflow_nodes` | Workspace | Node in version graph |
-| 26 | WorkflowConnection | `workflow_connections` | Workspace | Edge between nodes |
-| 27 | WorkflowVariable | `workflow_variables` | Workspace | Named workflow variable |
-| 28 | Tag | `tags` | Workspace | Label for organization |
-| 29 | WorkflowTag | `workflow_tags` | — | Workflow ↔ tag junction |
-| 30 | Comment | `comments` | Workspace | Threaded discussion |
-| 31 | WorkflowExecution | `workflow_executions` | Workspace | Single workflow run |
-| 32 | ExecutionStep | `execution_steps` | Workspace | Per-node invocation |
-| 33 | ExecutionLog | `execution_logs` | Workspace | Structured log line |
-| 34 | ExecutionMetric | `execution_metrics` | Workspace | Timing/size metric |
-| 35 | Schedule | `schedules` | Workspace | Cron trigger schedule |
-| 36 | Integration | `integrations` | Global | Connector catalog |
-| 37 | IntegrationCredential | `integration_credentials` | Workspace | Workspace integration connection |
-| 38 | WebhookEndpoint | `webhook_endpoints` | Workspace | Inbound webhook URL |
-| 39 | WebhookPayload | `webhook_payloads` | Workspace | Stored inbound payload |
-| 40 | WebhookSubscription | `webhook_subscriptions` | Workspace | Outbound event subscription |
-| 41 | WebhookDelivery | `webhook_deliveries` | Workspace | Outbound delivery attempt |
-| 42 | Notification | `notifications` | Workspace | Outbound notification |
-| 43 | NotificationTemplate | `notification_templates` | Global/Workspace | Message template |
-| 44 | NotificationPreference | `notification_preferences` | User/Workspace | Channel preferences |
-| 45 | File | `files` | Workspace | Uploaded file metadata |
+| #   | Entity                 | Table                      | Scope            | Description                         |
+| --- | ---------------------- | -------------------------- | ---------------- | ----------------------------------- |
+| 1   | User                   | `users`                    | Global           | Platform user account               |
+| 2   | OAuthAccount           | `oauth_accounts`           | Global           | Linked OAuth identity               |
+| 3   | Session                | `sessions`                 | Global           | Login session metadata              |
+| 4   | RefreshToken           | `refresh_tokens`           | Global           | JWT refresh token family            |
+| 5   | UserPreference         | `user_preferences`         | Global           | Per-user notification/UI prefs      |
+| 6   | Organization           | `organizations`            | Global           | Top-level org container             |
+| 7   | Workspace              | `workspaces`               | Org              | Tenant isolation boundary           |
+| 8   | Project                | `projects`                 | Workspace        | Workflow grouping                   |
+| 9   | WorkspaceMember        | `workspace_members`        | Workspace        | User ↔ workspace membership         |
+| 10  | Invitation             | `invitations`              | Workspace        | Pending email invite                |
+| 11  | Role                   | `roles`                    | Workspace/System | Named permission bundle             |
+| 12  | Permission             | `permissions`              | Global           | Permission catalog (read-only seed) |
+| 13  | RolePermission         | `role_permissions`         | —                | Role ↔ permission junction          |
+| 14  | MemberRole             | `member_roles`             | —                | Member ↔ role junction              |
+| 15  | ResourcePolicy         | `resource_policies`        | Workspace        | ABAC policy per resource            |
+| 16  | TenantSetting          | `tenant_settings`          | Workspace        | Key-value tenant config             |
+| 17  | QuotaUsage             | `quota_usage`              | Workspace        | Metered usage counters              |
+| 18  | FeatureFlag            | `feature_flags`            | Workspace/Global | Feature toggle state                |
+| 19  | ApiKey                 | `api_keys`                 | Workspace        | Programmatic API credential         |
+| 20  | Secret                 | `secrets`                  | Workspace        | Encrypted credential metadata       |
+| 21  | SecretVersion          | `secret_versions`          | Workspace        | Versioned encrypted value           |
+| 22  | Workflow               | `workflows`                | Workspace        | Automation definition               |
+| 23  | WorkflowDraft          | `workflow_drafts`          | Workspace        | Mutable graph JSON                  |
+| 24  | WorkflowVersion        | `workflow_versions`        | Workspace        | Immutable published snapshot        |
+| 25  | WorkflowNode           | `workflow_nodes`           | Workspace        | Node in version graph               |
+| 26  | WorkflowConnection     | `workflow_connections`     | Workspace        | Edge between nodes                  |
+| 27  | WorkflowVariable       | `workflow_variables`       | Workspace        | Named workflow variable             |
+| 28  | Tag                    | `tags`                     | Workspace        | Label for organization              |
+| 29  | WorkflowTag            | `workflow_tags`            | —                | Workflow ↔ tag junction             |
+| 30  | Comment                | `comments`                 | Workspace        | Threaded discussion                 |
+| 31  | WorkflowExecution      | `workflow_executions`      | Workspace        | Single workflow run                 |
+| 32  | ExecutionStep          | `execution_steps`          | Workspace        | Per-node invocation                 |
+| 33  | ExecutionLog           | `execution_logs`           | Workspace        | Structured log line                 |
+| 34  | ExecutionMetric        | `execution_metrics`        | Workspace        | Timing/size metric                  |
+| 35  | Schedule               | `schedules`                | Workspace        | Cron trigger schedule               |
+| 36  | Integration            | `integrations`             | Global           | Connector catalog                   |
+| 37  | IntegrationCredential  | `integration_credentials`  | Workspace        | Workspace integration connection    |
+| 38  | WebhookEndpoint        | `webhook_endpoints`        | Workspace        | Inbound webhook URL                 |
+| 39  | WebhookPayload         | `webhook_payloads`         | Workspace        | Stored inbound payload              |
+| 40  | WebhookSubscription    | `webhook_subscriptions`    | Workspace        | Outbound event subscription         |
+| 41  | WebhookDelivery        | `webhook_deliveries`       | Workspace        | Outbound delivery attempt           |
+| 42  | Notification           | `notifications`            | Workspace        | Outbound notification               |
+| 43  | NotificationTemplate   | `notification_templates`   | Global/Workspace | Message template                    |
+| 44  | NotificationPreference | `notification_preferences` | User/Workspace   | Channel preferences                 |
+| 45  | File                   | `files`                    | Workspace        | Uploaded file metadata              |
 
 ### Infrastructure Entities (Supporting — not counted in 45)
 
-| Entity | Table | Description |
-|--------|-------|-------------|
-| AuditLog | `audit_logs` | Immutable audit trail |
-| TimelineEvent | `timeline_events` | Activity feed |
-| SecurityEvent | `security_events` | Auth failure, lockout events |
-| OutboxEvent | `outbox_events` | Transactional outbox |
-| InboxEvent | `inbox_events` | Consumer deduplication |
-| IdempotencyKey | `idempotency_keys` | HTTP idempotency cache |
-| RateLimitRecord | `rate_limit_records` | Rate limit sliding window state |
-| SearchIndex | `search_indexes` | FTS index metadata (optional denorm) |
+| Entity          | Table                | Description                          |
+| --------------- | -------------------- | ------------------------------------ |
+| AuditLog        | `audit_logs`         | Immutable audit trail                |
+| TimelineEvent   | `timeline_events`    | Activity feed                        |
+| SecurityEvent   | `security_events`    | Auth failure, lockout events         |
+| OutboxEvent     | `outbox_events`      | Transactional outbox                 |
+| InboxEvent      | `inbox_events`       | Consumer deduplication               |
+| IdempotencyKey  | `idempotency_keys`   | HTTP idempotency cache               |
+| RateLimitRecord | `rate_limit_records` | Rate limit sliding window state      |
+| SearchIndex     | `search_indexes`     | FTS index metadata (optional denorm) |
 
 ---
 
@@ -607,29 +608,29 @@ erDiagram
 
 #### `users`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| email | VARCHAR(320) | UQ, NN |
-| password_hash | VARCHAR(255) | nullable (OAuth-only users) |
-| name | VARCHAR(255) | NN |
-| email_verified | BOOLEAN | default false |
-| email_verified_at | TIMESTAMPTZ | |
-| last_login_at | TIMESTAMPTZ | |
-| deleted_at | TIMESTAMPTZ | |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column            | Type         | Constraints                 |
+| ----------------- | ------------ | --------------------------- |
+| id                | UUID         | PK                          |
+| email             | VARCHAR(320) | UQ, NN                      |
+| password_hash     | VARCHAR(255) | nullable (OAuth-only users) |
+| name              | VARCHAR(255) | NN                          |
+| email_verified    | BOOLEAN      | default false               |
+| email_verified_at | TIMESTAMPTZ  |                             |
+| last_login_at     | TIMESTAMPTZ  |                             |
+| deleted_at        | TIMESTAMPTZ  |                             |
+| created_at        | TIMESTAMPTZ  | NN                          |
+| updated_at        | TIMESTAMPTZ  | NN                          |
 
 **Indexes:** `UQ(email) WHERE deleted_at IS NULL`, `IDX(users.created_at)`
 
 #### `permissions` (seed catalog)
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| slug | VARCHAR(128) | UQ, NN |
-| description | TEXT | |
-| category | VARCHAR(64) | NN |
+| Column      | Type         | Constraints |
+| ----------- | ------------ | ----------- |
+| id          | UUID         | PK          |
+| slug        | VARCHAR(128) | UQ, NN      |
+| description | TEXT         |             |
+| category    | VARCHAR(64)  | NN          |
 
 ---
 
@@ -637,59 +638,59 @@ erDiagram
 
 #### `workspaces`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| organization_id | UUID | FK → organizations, NN |
-| name | VARCHAR(255) | NN |
-| slug | VARCHAR(64) | NN |
-| description | TEXT | |
-| status | ENUM | active, suspended |
-| deleted_at | TIMESTAMPTZ | |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column          | Type         | Constraints            |
+| --------------- | ------------ | ---------------------- |
+| id              | UUID         | PK                     |
+| organization_id | UUID         | FK → organizations, NN |
+| name            | VARCHAR(255) | NN                     |
+| slug            | VARCHAR(64)  | NN                     |
+| description     | TEXT         |                        |
+| status          | ENUM         | active, suspended      |
+| deleted_at      | TIMESTAMPTZ  |                        |
+| created_at      | TIMESTAMPTZ  | NN                     |
+| updated_at      | TIMESTAMPTZ  | NN                     |
 
 **Indexes:** `UQ(organization_id, slug) WHERE deleted_at IS NULL`
 
 #### `workspace_members`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| user_id | UUID | FK, NN |
-| status | ENUM | active, suspended |
-| joined_at | TIMESTAMPTZ | NN |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column       | Type        | Constraints       |
+| ------------ | ----------- | ----------------- |
+| id           | UUID        | PK                |
+| workspace_id | UUID        | FK, NN            |
+| user_id      | UUID        | FK, NN            |
+| status       | ENUM        | active, suspended |
+| joined_at    | TIMESTAMPTZ | NN                |
+| created_at   | TIMESTAMPTZ | NN                |
+| updated_at   | TIMESTAMPTZ | NN                |
 
 **Indexes:** `UQ(workspace_id, user_id)`
 
 #### `tenant_settings`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| key | VARCHAR(128) | NN |
-| value | JSONB | NN |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column       | Type         | Constraints |
+| ------------ | ------------ | ----------- |
+| id           | UUID         | PK          |
+| workspace_id | UUID         | FK, NN      |
+| key          | VARCHAR(128) | NN          |
+| value        | JSONB        | NN          |
+| created_at   | TIMESTAMPTZ  | NN          |
+| updated_at   | TIMESTAMPTZ  | NN          |
 
 **Indexes:** `UQ(workspace_id, key)`
 
 #### `quota_usage`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| metric | VARCHAR(64) | NN |
-| period_start | DATE | NN |
-| period_end | DATE | NN |
-| current_value | BIGINT | NN, default 0 |
-| limit_value | BIGINT | |
-| updated_at | TIMESTAMPTZ | NN |
+| Column        | Type        | Constraints   |
+| ------------- | ----------- | ------------- |
+| id            | UUID        | PK            |
+| workspace_id  | UUID        | FK, NN        |
+| metric        | VARCHAR(64) | NN            |
+| period_start  | DATE        | NN            |
+| period_end    | DATE        | NN            |
+| current_value | BIGINT      | NN, default 0 |
+| limit_value   | BIGINT      |               |
+| updated_at    | TIMESTAMPTZ | NN            |
 
 **Indexes:** `UQ(workspace_id, metric, period_start)`
 
@@ -699,35 +700,35 @@ erDiagram
 
 #### `workflows`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| project_id | UUID | FK, nullable |
-| name | VARCHAR(255) | NN |
-| description | TEXT | |
-| is_template | BOOLEAN | default false |
-| version | INT | NN, default 1 (optimistic lock) |
-| created_by | UUID | FK → users |
-| deleted_at | TIMESTAMPTZ | |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column       | Type         | Constraints                     |
+| ------------ | ------------ | ------------------------------- |
+| id           | UUID         | PK                              |
+| workspace_id | UUID         | FK, NN                          |
+| project_id   | UUID         | FK, nullable                    |
+| name         | VARCHAR(255) | NN                              |
+| description  | TEXT         |                                 |
+| is_template  | BOOLEAN      | default false                   |
+| version      | INT          | NN, default 1 (optimistic lock) |
+| created_by   | UUID         | FK → users                      |
+| deleted_at   | TIMESTAMPTZ  |                                 |
+| created_at   | TIMESTAMPTZ  | NN                              |
+| updated_at   | TIMESTAMPTZ  | NN                              |
 
 **Indexes:** `IDX(workspace_id, deleted_at, updated_at DESC)`, GIN full-text on `name || description`
 
 #### `workflow_versions`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| workflow_id | UUID | FK, NN |
-| version_number | INT | NN |
-| changelog | TEXT | |
-| published_by | UUID | FK → users |
-| published_at | TIMESTAMPTZ | NN |
-| snapshot_hash | VARCHAR(64) | SHA-256 of canonical graph |
-| created_at | TIMESTAMPTZ | NN |
+| Column         | Type        | Constraints                |
+| -------------- | ----------- | -------------------------- |
+| id             | UUID        | PK                         |
+| workspace_id   | UUID        | FK, NN                     |
+| workflow_id    | UUID        | FK, NN                     |
+| version_number | INT         | NN                         |
+| changelog      | TEXT        |                            |
+| published_by   | UUID        | FK → users                 |
+| published_at   | TIMESTAMPTZ | NN                         |
+| snapshot_hash  | VARCHAR(64) | SHA-256 of canonical graph |
+| created_at     | TIMESTAMPTZ | NN                         |
 
 **Indexes:** `UQ(workflow_id, version_number)`, `IDX(workspace_id, workflow_id)`
 
@@ -737,43 +738,43 @@ erDiagram
 
 #### `workflow_executions`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| workflow_version_id | UUID | FK, NN |
-| status | ENUM | NN |
-| trigger_type | ENUM | webhook, schedule, manual, api |
-| trigger_payload | JSONB | |
-| idempotency_key | VARCHAR(255) | |
-| sandbox | BOOLEAN | default false |
-| started_by | UUID | FK, nullable |
-| started_at | TIMESTAMPTZ | |
-| completed_at | TIMESTAMPTZ | |
-| version | INT | NN (optimistic lock) |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column              | Type         | Constraints                    |
+| ------------------- | ------------ | ------------------------------ |
+| id                  | UUID         | PK                             |
+| workspace_id        | UUID         | FK, NN                         |
+| workflow_version_id | UUID         | FK, NN                         |
+| status              | ENUM         | NN                             |
+| trigger_type        | ENUM         | webhook, schedule, manual, api |
+| trigger_payload     | JSONB        |                                |
+| idempotency_key     | VARCHAR(255) |                                |
+| sandbox             | BOOLEAN      | default false                  |
+| started_by          | UUID         | FK, nullable                   |
+| started_at          | TIMESTAMPTZ  |                                |
+| completed_at        | TIMESTAMPTZ  |                                |
+| version             | INT          | NN (optimistic lock)           |
+| created_at          | TIMESTAMPTZ  | NN                             |
+| updated_at          | TIMESTAMPTZ  | NN                             |
 
 **Indexes:** `IDX(workspace_id, status, created_at DESC)`, `IDX(workspace_id, workflow_version_id)`, `UQ(workspace_id, idempotency_key) WHERE idempotency_key IS NOT NULL`
 
 #### `execution_steps`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| execution_id | UUID | FK, NN |
-| node_id | UUID | FK → workflow_nodes |
-| sequence_number | INT | NN |
-| status | ENUM | NN |
-| input_payload | JSONB | |
-| output_payload | JSONB | |
-| error_code | VARCHAR(64) | |
-| error_message | TEXT | |
-| attempt_number | INT | default 1 |
-| started_at | TIMESTAMPTZ | |
-| completed_at | TIMESTAMPTZ | |
-| created_at | TIMESTAMPTZ | NN |
+| Column          | Type        | Constraints         |
+| --------------- | ----------- | ------------------- |
+| id              | UUID        | PK                  |
+| workspace_id    | UUID        | FK, NN              |
+| execution_id    | UUID        | FK, NN              |
+| node_id         | UUID        | FK → workflow_nodes |
+| sequence_number | INT         | NN                  |
+| status          | ENUM        | NN                  |
+| input_payload   | JSONB       |                     |
+| output_payload  | JSONB       |                     |
+| error_code      | VARCHAR(64) |                     |
+| error_message   | TEXT        |                     |
+| attempt_number  | INT         | default 1           |
+| started_at      | TIMESTAMPTZ |                     |
+| completed_at    | TIMESTAMPTZ |                     |
+| created_at      | TIMESTAMPTZ | NN                  |
 
 **Indexes:** `UQ(execution_id, sequence_number, attempt_number)`, `IDX(execution_id, status)`
 
@@ -783,33 +784,33 @@ erDiagram
 
 #### `webhook_endpoints`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| workflow_version_id | UUID | FK, NN |
-| path_token | VARCHAR(64) | UQ, NN |
-| signing_secret_enc | BYTEA | |
-| enabled | BOOLEAN | default true |
-| created_at | TIMESTAMPTZ | NN |
-| updated_at | TIMESTAMPTZ | NN |
+| Column              | Type        | Constraints  |
+| ------------------- | ----------- | ------------ |
+| id                  | UUID        | PK           |
+| workspace_id        | UUID        | FK, NN       |
+| workflow_version_id | UUID        | FK, NN       |
+| path_token          | VARCHAR(64) | UQ, NN       |
+| signing_secret_enc  | BYTEA       |              |
+| enabled             | BOOLEAN     | default true |
+| created_at          | TIMESTAMPTZ | NN           |
+| updated_at          | TIMESTAMPTZ | NN           |
 
 #### `webhook_deliveries`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| subscription_id | UUID | FK, NN |
-| workspace_id | UUID | FK, NN |
-| event_type | VARCHAR(128) | NN |
-| payload | JSONB | NN |
-| status | ENUM | pending, delivered, failed, dead_lettered |
-| attempt_count | INT | default 0 |
-| http_status | INT | |
-| response_body | TEXT | truncated |
-| next_retry_at | TIMESTAMPTZ | |
-| delivered_at | TIMESTAMPTZ | |
-| created_at | TIMESTAMPTZ | NN |
+| Column          | Type         | Constraints                               |
+| --------------- | ------------ | ----------------------------------------- |
+| id              | UUID         | PK                                        |
+| subscription_id | UUID         | FK, NN                                    |
+| workspace_id    | UUID         | FK, NN                                    |
+| event_type      | VARCHAR(128) | NN                                        |
+| payload         | JSONB        | NN                                        |
+| status          | ENUM         | pending, delivered, failed, dead_lettered |
+| attempt_count   | INT          | default 0                                 |
+| http_status     | INT          |                                           |
+| response_body   | TEXT         | truncated                                 |
+| next_retry_at   | TIMESTAMPTZ  |                                           |
+| delivered_at    | TIMESTAMPTZ  |                                           |
+| created_at      | TIMESTAMPTZ  | NN                                        |
 
 **Indexes:** `IDX(status, next_retry_at) WHERE status = 'pending'`, `IDX(workspace_id, created_at DESC)`
 
@@ -819,70 +820,70 @@ erDiagram
 
 #### `outbox_events`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, nullable (system events) |
-| aggregate_type | VARCHAR(64) | NN |
-| aggregate_id | UUID | NN |
-| event_type | VARCHAR(128) | NN |
-| payload | JSONB | NN |
-| metadata | JSONB | |
-| occurred_at | TIMESTAMPTZ | NN |
-| published_at | TIMESTAMPTZ | nullable |
-| publish_attempts | INT | default 0 |
-| created_at | TIMESTAMPTZ | NN |
+| Column           | Type         | Constraints                  |
+| ---------------- | ------------ | ---------------------------- |
+| id               | UUID         | PK                           |
+| workspace_id     | UUID         | FK, nullable (system events) |
+| aggregate_type   | VARCHAR(64)  | NN                           |
+| aggregate_id     | UUID         | NN                           |
+| event_type       | VARCHAR(128) | NN                           |
+| payload          | JSONB        | NN                           |
+| metadata         | JSONB        |                              |
+| occurred_at      | TIMESTAMPTZ  | NN                           |
+| published_at     | TIMESTAMPTZ  | nullable                     |
+| publish_attempts | INT          | default 0                    |
+| created_at       | TIMESTAMPTZ  | NN                           |
 
 **Indexes:** `IDX(published_at, created_at) WHERE published_at IS NULL` (relay poll)
 
 #### `inbox_events`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| consumer_id | VARCHAR(128) | NN |
-| event_id | UUID | NN |
-| workspace_id | UUID | FK |
-| processed_at | TIMESTAMPTZ | NN |
-| created_at | TIMESTAMPTZ | NN |
+| Column       | Type         | Constraints |
+| ------------ | ------------ | ----------- |
+| id           | UUID         | PK          |
+| consumer_id  | VARCHAR(128) | NN          |
+| event_id     | UUID         | NN          |
+| workspace_id | UUID         | FK          |
+| processed_at | TIMESTAMPTZ  | NN          |
+| created_at   | TIMESTAMPTZ  | NN          |
 
 **Indexes:** `UQ(consumer_id, event_id)`
 
 #### `audit_logs`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK |
-| actor_user_id | UUID | FK, nullable |
-| actor_type | ENUM | user, api_key, system |
-| actor_api_key_id | UUID | FK, nullable |
-| resource_type | VARCHAR(64) | NN |
-| resource_id | UUID | NN |
-| action | VARCHAR(64) | NN |
-| before_value | JSONB | |
-| after_value | JSONB | |
-| ip_address | INET | |
-| user_agent | TEXT | |
-| correlation_id | VARCHAR(64) | |
-| occurred_at | TIMESTAMPTZ | NN |
-| created_at | TIMESTAMPTZ | NN |
+| Column           | Type        | Constraints           |
+| ---------------- | ----------- | --------------------- |
+| id               | UUID        | PK                    |
+| workspace_id     | UUID        | FK                    |
+| actor_user_id    | UUID        | FK, nullable          |
+| actor_type       | ENUM        | user, api_key, system |
+| actor_api_key_id | UUID        | FK, nullable          |
+| resource_type    | VARCHAR(64) | NN                    |
+| resource_id      | UUID        | NN                    |
+| action           | VARCHAR(64) | NN                    |
+| before_value     | JSONB       |                       |
+| after_value      | JSONB       |                       |
+| ip_address       | INET        |                       |
+| user_agent       | TEXT        |                       |
+| correlation_id   | VARCHAR(64) |                       |
+| occurred_at      | TIMESTAMPTZ | NN                    |
+| created_at       | TIMESTAMPTZ | NN                    |
 
 **Indexes:** `IDX(workspace_id, occurred_at DESC)`, `IDX(workspace_id, resource_type, resource_id)`, GIN on `before_value`, `after_value`
 
 #### `idempotency_keys`
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PK |
-| workspace_id | UUID | FK, NN |
-| actor_id | UUID | NN |
-| idempotency_key | VARCHAR(255) | NN |
-| request_fingerprint | VARCHAR(64) | NN |
-| response_status | INT | |
-| response_body | JSONB | |
-| expires_at | TIMESTAMPTZ | NN |
-| created_at | TIMESTAMPTZ | NN |
+| Column              | Type         | Constraints |
+| ------------------- | ------------ | ----------- |
+| id                  | UUID         | PK          |
+| workspace_id        | UUID         | FK, NN      |
+| actor_id            | UUID         | NN          |
+| idempotency_key     | VARCHAR(255) | NN          |
+| request_fingerprint | VARCHAR(64)  | NN          |
+| response_status     | INT          |             |
+| response_body       | JSONB        |             |
+| expires_at          | TIMESTAMPTZ  | NN          |
+| created_at          | TIMESTAMPTZ  | NN          |
 
 **Indexes:** `UQ(workspace_id, actor_id, idempotency_key)`, `IDX(expires_at)` (TTL cleanup job)
 
@@ -915,6 +916,7 @@ flowchart TD
 ```
 
 **Cascade rules:**
+
 - `workspaces` delete → soft delete; hard delete prohibited with children (application enforced)
 - `workflows` soft delete → versions/executions retained
 - `users` delete → soft delete; anonymize PII in audit references
@@ -924,13 +926,13 @@ flowchart TD
 
 ## 7. Index Strategy
 
-| Pattern | Example | Rationale |
-|---------|---------|-----------|
-| Tenant-leading composite | `(workspace_id, status, created_at DESC)` | All list queries are workspace-scoped |
-| Partial unique | `UQ(email) WHERE deleted_at IS NULL` | Soft delete compatibility |
-| Partial index | `IDX(...) WHERE published_at IS NULL` | Outbox relay hot path |
-| GIN full-text | `to_tsvector(name \|\| description)` | Workflow/audit search |
-| Covering | `(workspace_id, id) INCLUDE (name, status)` | List endpoint optimization (future) |
+| Pattern                  | Example                                     | Rationale                             |
+| ------------------------ | ------------------------------------------- | ------------------------------------- |
+| Tenant-leading composite | `(workspace_id, status, created_at DESC)`   | All list queries are workspace-scoped |
+| Partial unique           | `UQ(email) WHERE deleted_at IS NULL`        | Soft delete compatibility             |
+| Partial index            | `IDX(...) WHERE published_at IS NULL`       | Outbox relay hot path                 |
+| GIN full-text            | `to_tsvector(name \|\| description)`        | Workflow/audit search                 |
+| Covering                 | `(workspace_id, id) INCLUDE (name, status)` | List endpoint optimization (future)   |
 
 ---
 
@@ -977,46 +979,46 @@ CREATE TYPE actor_type AS ENUM ('user', 'api_key', 'system');
 
 The Prisma schema in `prisma/schema.prisma` will implement this ERD incrementally by milestone:
 
-| Milestone | Tables Introduced |
-|-----------|-------------------|
-| M0 | (baseline — extensions, enums only) |
-| M1 | users, oauth_accounts, sessions, refresh_tokens, organizations, workspaces, workspace_members, api_keys |
-| M2 | roles, permissions, role_permissions, member_roles, resource_policies, invitations, audit_logs |
-| M3 | workflows, workflow_drafts, workflow_versions, workflow_nodes, workflow_connections, workflow_variables, tags |
-| M4 | workflow_executions, execution_steps, execution_logs, execution_metrics, schedules, idempotency_keys |
-| M5 | webhook_endpoints, webhook_payloads, webhook_subscriptions, webhook_deliveries |
-| M6 | secrets, secret_versions, integrations, integration_credentials, files, notifications, search |
-| M7+ | outbox_events, inbox_events, timeline_events, security_events, quota_usage, feature_flags |
+| Milestone | Tables Introduced                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------------------------- |
+| M0        | (baseline — extensions, enums only)                                                                           |
+| M1        | users, oauth_accounts, sessions, refresh_tokens, organizations, workspaces, workspace_members, api_keys       |
+| M2        | roles, permissions, role_permissions, member_roles, resource_policies, invitations, audit_logs                |
+| M3        | workflows, workflow_drafts, workflow_versions, workflow_nodes, workflow_connections, workflow_variables, tags |
+| M4        | workflow_executions, execution_steps, execution_logs, execution_metrics, schedules, idempotency_keys          |
+| M5        | webhook_endpoints, webhook_payloads, webhook_subscriptions, webhook_deliveries                                |
+| M6        | secrets, secret_versions, integrations, integration_credentials, files, notifications, search                 |
+| M7+       | outbox_events, inbox_events, timeline_events, security_events, quota_usage, feature_flags                     |
 
 ---
 
 ## 10. Data Retention
 
-| Table | Default Retention | Mechanism |
-|-------|-------------------|-----------|
-| execution_logs | 90 days | Partition by month; drop old partitions |
-| webhook_payloads | 30 days | Scheduled cleanup job |
-| webhook_deliveries | 90 days | Archive then delete |
-| idempotency_keys | 24 hours | TTL index + cleanup job |
-| outbox_events | 7 days after publish | Cleanup job |
-| inbox_events | 30 days | Cleanup job |
-| rate_limit_records | 1 hour | Redis primary; PG backup TTL |
-| audit_logs | Indefinite | Archive to cold storage after 2 years |
+| Table              | Default Retention    | Mechanism                               |
+| ------------------ | -------------------- | --------------------------------------- |
+| execution_logs     | 90 days              | Partition by month; drop old partitions |
+| webhook_payloads   | 30 days              | Scheduled cleanup job                   |
+| webhook_deliveries | 90 days              | Archive then delete                     |
+| idempotency_keys   | 24 hours             | TTL index + cleanup job                 |
+| outbox_events      | 7 days after publish | Cleanup job                             |
+| inbox_events       | 30 days              | Cleanup job                             |
+| rate_limit_records | 1 hour               | Redis primary; PG backup TTL            |
+| audit_logs         | Indefinite           | Archive to cold storage after 2 years   |
 
 ---
 
 ## 11. Related Documents
 
-| Document | Description |
-|----------|-------------|
-| [DOMAIN-MODEL.md](./DOMAIN-MODEL.md) | Aggregates and domain invariants |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System architecture and patterns |
-| [EVENT-CATALOG.md](./EVENT-CATALOG.md) | Outbox/inbox event types |
+| Document                               | Description                      |
+| -------------------------------------- | -------------------------------- |
+| [DOMAIN-MODEL.md](./DOMAIN-MODEL.md)   | Aggregates and domain invariants |
+| [ARCHITECTURE.md](./ARCHITECTURE.md)   | System architecture and patterns |
+| [EVENT-CATALOG.md](./EVENT-CATALOG.md) | Outbox/inbox event types         |
 
 ---
 
 ## 12. Document History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.1.0 | 2026-07-14 | Initial ERD with 45 core entities |
+| Version | Date       | Changes                           |
+| ------- | ---------- | --------------------------------- |
+| 0.1.0   | 2026-07-14 | Initial ERD with 45 core entities |

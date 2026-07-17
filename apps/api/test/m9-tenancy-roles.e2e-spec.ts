@@ -2,12 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/persistence/prisma.service';
-import {
-  AuthBody,
-  IdBody,
-  createE2eApp,
-  registerOwnerWorkspace,
-} from './helpers/e2e-app';
+import { AuthBody, IdBody, createE2eApp, registerOwnerWorkspace } from './helpers/e2e-app';
 
 describe('M9 Tenancy, members & roles (e2e)', () => {
   let app: INestApplication<App>;

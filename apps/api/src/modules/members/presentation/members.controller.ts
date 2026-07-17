@@ -50,10 +50,7 @@ export class MembersController {
   @ApiParam({ name: 'workspaceId', format: 'uuid' })
   @ApiOkResponse({ type: MemberResponseDto, isArray: true })
   @RequirePermission('member:read')
-  list(
-    @CurrentUser() user: AuthUser,
-    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
-  ) {
+  list(@CurrentUser() user: AuthUser, @Param('workspaceId', ParseUUIDPipe) workspaceId: string) {
     return this.members.list(workspaceId, user.sub);
   }
 

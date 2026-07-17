@@ -12,26 +12,26 @@ FlowForge is a **multi-tenant workflow automation platform** implemented as a **
 
 ### Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Node.js ≥ 20, TypeScript 5.x (strict) |
-| API Framework | NestJS |
-| ORM | Prisma |
-| Database | PostgreSQL 16 |
-| Cache / Locks | Redis 7 |
-| Job Queue | BullMQ |
-| Object Storage | MinIO (local) / S3-compatible (prod) |
-| Validation | Zod |
-| Auth | Passport, JWT |
-| API Docs | Swagger / OpenAPI 3.1 |
-| Logging | Pino (structured JSON) |
-| Tracing | OpenTelemetry |
-| Metrics | Prometheus |
-| Dashboards | Grafana |
-| Log Aggregation | Loki |
-| Containers | Docker, Docker Compose |
-| CI | GitHub Actions |
-| Monorepo | pnpm workspaces + Turborepo |
+| Layer           | Technology                            |
+| --------------- | ------------------------------------- |
+| Runtime         | Node.js ≥ 20, TypeScript 5.x (strict) |
+| API Framework   | NestJS                                |
+| ORM             | Prisma                                |
+| Database        | PostgreSQL 16                         |
+| Cache / Locks   | Redis 7                               |
+| Job Queue       | BullMQ                                |
+| Object Storage  | MinIO (local) / S3-compatible (prod)  |
+| Validation      | Zod                                   |
+| Auth            | Passport, JWT                         |
+| API Docs        | Swagger / OpenAPI 3.1                 |
+| Logging         | Pino (structured JSON)                |
+| Tracing         | OpenTelemetry                         |
+| Metrics         | Prometheus                            |
+| Dashboards      | Grafana                               |
+| Log Aggregation | Loki                                  |
+| Containers      | Docker, Docker Compose                |
+| CI              | GitHub Actions                        |
+| Monorepo        | pnpm workspaces + Turborepo           |
 
 ---
 
@@ -99,13 +99,13 @@ flowchart TB
 
 ### Layer Responsibilities
 
-| Layer | Responsibility | May Depend On |
-|-------|----------------|---------------|
-| **Presentation** | HTTP routing, auth guards, request validation, response mapping, RFC 7807 errors | Application, Domain (interfaces only) |
-| **Application** | Use cases, orchestration, transaction boundaries, CQRS handlers, outbox dispatch | Domain |
-| **Domain** | Business rules, invariants, aggregates, domain events, repository contracts | Nothing external |
-| **Infrastructure** | Adapters implementing domain/application ports | Domain, Application, Persistence |
-| **Persistence** | Prisma schema, migrations, raw queries | Database engines |
+| Layer              | Responsibility                                                                   | May Depend On                         |
+| ------------------ | -------------------------------------------------------------------------------- | ------------------------------------- |
+| **Presentation**   | HTTP routing, auth guards, request validation, response mapping, RFC 7807 errors | Application, Domain (interfaces only) |
+| **Application**    | Use cases, orchestration, transaction boundaries, CQRS handlers, outbox dispatch | Domain                                |
+| **Domain**         | Business rules, invariants, aggregates, domain events, repository contracts      | Nothing external                      |
+| **Infrastructure** | Adapters implementing domain/application ports                                   | Domain, Application, Persistence      |
+| **Persistence**    | Prisma schema, migrations, raw queries                                           | Database engines                      |
 
 ### Hard Rules
 
@@ -284,25 +284,25 @@ modules/workflow/
 
 FlowForge is decomposed into **bounded contexts**. Each context maps to one or more NestJS modules.
 
-| Bounded Context | NestJS Module(s) | Responsibility |
-|-----------------|------------------|----------------|
-| **Identity** | `AuthModule`, `SessionModule` | Registration, login, JWT, refresh rotation, OAuth |
-| **Tenancy** | `TenantModule`, `OrganizationModule`, `WorkspaceModule` | Org/workspace CRUD, tenant context, settings |
-| **Membership** | `MemberModule`, `InvitationModule` | Invitations, workspace membership |
-| **Authorization** | `AuthorizationModule`, `RoleModule`, `PolicyModule` | RBAC, ABAC, permission cache |
-| **Workflow Authoring** | `WorkflowModule`, `WorkflowVersionModule`, `WorkflowDraftModule` | CRUD, graph, publish, rollback |
-| **Workflow Execution** | `ExecutionModule`, `SchedulerModule` | Engine orchestration, state, history |
-| **Webhooks** | `WebhookIngressModule`, `WebhookEgressModule` | Incoming triggers, outgoing deliveries |
-| **Integrations** | `IntegrationModule`, `ActionRegistryModule` | Connector catalog, action handlers |
-| **Secrets** | `SecretModule` | Encrypted credential vault |
-| **Notifications** | `NotificationModule` | Email, Slack, webhook notifications |
-| **Files** | `FileModule` | Upload metadata, signed URLs |
-| **Search** | `SearchModule` | Full-text search indexing and queries |
-| **Audit** | `AuditModule`, `TimelineModule` | Audit log, activity feed |
-| **Events** | `OutboxModule`, `InboxModule` | Transactional outbox relay, consumer inbox |
-| **Idempotency** | `IdempotencyModule` | Request deduplication framework |
-| **Platform** | `HealthModule`, `MetricsModule`, `FeatureFlagModule` | Ops endpoints, flags, quotas |
-| **API Keys** | `ApiKeyModule` | Programmatic access credentials |
+| Bounded Context        | NestJS Module(s)                                                 | Responsibility                                    |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------------------------- |
+| **Identity**           | `AuthModule`, `SessionModule`                                    | Registration, login, JWT, refresh rotation, OAuth |
+| **Tenancy**            | `TenantModule`, `OrganizationModule`, `WorkspaceModule`          | Org/workspace CRUD, tenant context, settings      |
+| **Membership**         | `MemberModule`, `InvitationModule`                               | Invitations, workspace membership                 |
+| **Authorization**      | `AuthorizationModule`, `RoleModule`, `PolicyModule`              | RBAC, ABAC, permission cache                      |
+| **Workflow Authoring** | `WorkflowModule`, `WorkflowVersionModule`, `WorkflowDraftModule` | CRUD, graph, publish, rollback                    |
+| **Workflow Execution** | `ExecutionModule`, `SchedulerModule`                             | Engine orchestration, state, history              |
+| **Webhooks**           | `WebhookIngressModule`, `WebhookEgressModule`                    | Incoming triggers, outgoing deliveries            |
+| **Integrations**       | `IntegrationModule`, `ActionRegistryModule`                      | Connector catalog, action handlers                |
+| **Secrets**            | `SecretModule`                                                   | Encrypted credential vault                        |
+| **Notifications**      | `NotificationModule`                                             | Email, Slack, webhook notifications               |
+| **Files**              | `FileModule`                                                     | Upload metadata, signed URLs                      |
+| **Search**             | `SearchModule`                                                   | Full-text search indexing and queries             |
+| **Audit**              | `AuditModule`, `TimelineModule`                                  | Audit log, activity feed                          |
+| **Events**             | `OutboxModule`, `InboxModule`                                    | Transactional outbox relay, consumer inbox        |
+| **Idempotency**        | `IdempotencyModule`                                              | Request deduplication framework                   |
+| **Platform**           | `HealthModule`, `MetricsModule`, `FeatureFlagModule`             | Ops endpoints, flags, quotas                      |
+| **API Keys**           | `ApiKeyModule`                                                   | Programmatic access credentials                   |
 
 ### Module Dependency Graph
 
@@ -345,11 +345,11 @@ flowchart TD
 
 ### 6.1 CQRS
 
-| Write Path | Read Path |
-|------------|-----------|
-| Commands mutate aggregates via repositories | Queries use read-optimized repositories or views |
-| Domain events emitted on state change | DTOs tailored for API responses (no aggregate leakage) |
-| Transactional consistency required | Eventual consistency acceptable for search indexes |
+| Write Path                                  | Read Path                                              |
+| ------------------------------------------- | ------------------------------------------------------ |
+| Commands mutate aggregates via repositories | Queries use read-optimized repositories or views       |
+| Domain events emitted on state change       | DTOs tailored for API responses (no aggregate leakage) |
+| Transactional consistency required          | Eventual consistency acceptable for search indexes     |
 
 CQRS is applied **pragmatically** — not every entity gets separate read models. Execution history and audit logs benefit most from dedicated query handlers.
 
@@ -428,15 +428,15 @@ sequenceDiagram
 
 ### Isolation Guarantees
 
-| Layer | Mechanism |
-|-------|-----------|
-| API | `TenantGuard` rejects missing/invalid workspace context |
-| Application | `TenantContext` passed explicitly to commands/queries |
-| Repository | Mandatory `workspaceId` predicate; specification enforcement |
-| Cache | Keys prefixed `ws:{workspaceId}:...` |
-| Queue | Job payload includes `workspaceId`; worker validates |
-| Storage | Object keys namespaced by workspace |
-| Logs/Traces | `tenant.id` attribute on every span and log line |
+| Layer       | Mechanism                                                    |
+| ----------- | ------------------------------------------------------------ |
+| API         | `TenantGuard` rejects missing/invalid workspace context      |
+| Application | `TenantContext` passed explicitly to commands/queries        |
+| Repository  | Mandatory `workspaceId` predicate; specification enforcement |
+| Cache       | Keys prefixed `ws:{workspaceId}:...`                         |
+| Queue       | Job payload includes `workspaceId`; worker validates         |
+| Storage     | Object keys namespaced by workspace                          |
+| Logs/Traces | `tenant.id` attribute on every span and log line             |
 
 ---
 
@@ -463,25 +463,25 @@ flowchart LR
 
 ### Process Topology
 
-| Process | Role |
-|---------|------|
-| `flowforge-api` | Synchronous HTTP, webhook ingress, enqueue executions, CRUD |
+| Process            | Role                                                                      |
+| ------------------ | ------------------------------------------------------------------------- |
+| `flowforge-api`    | Synchronous HTTP, webhook ingress, enqueue executions, CRUD               |
 | `flowforge-worker` | BullMQ consumers: execution, outbox relay, notifications, search indexing |
 
 Workers scale horizontally. BullMQ uses Redis for coordination. Execution state is authoritative in PostgreSQL.
 
 ### Queue Topology (Summary)
 
-| Queue | Purpose | Priority |
-|-------|---------|----------|
-| `execution` | Workflow node processing | Normal |
-| `execution:priority` | Manual replays, admin triggers | High |
-| `execution:delayed` | Delay nodes, scheduled continuations | Time-based |
-| `outbox-relay` | Publish domain events | High |
-| `notifications` | Email, Slack, webhook notifications | Normal |
-| `webhook-delivery` | Outgoing webhook HTTP calls | Normal |
-| `search-index` | Async FTS index updates | Low |
-| `dlq:*` | Dead letter queues per source | — |
+| Queue                | Purpose                              | Priority   |
+| -------------------- | ------------------------------------ | ---------- |
+| `execution`          | Workflow node processing             | Normal     |
+| `execution:priority` | Manual replays, admin triggers       | High       |
+| `execution:delayed`  | Delay nodes, scheduled continuations | Time-based |
+| `outbox-relay`       | Publish domain events                | High       |
+| `notifications`      | Email, Slack, webhook notifications  | Normal     |
+| `webhook-delivery`   | Outgoing webhook HTTP calls          | Normal     |
+| `search-index`       | Async FTS index updates              | Low        |
+| `dlq:*`              | Dead letter queues per source        | —          |
 
 See `docs/architecture/QUEUE-DESIGN.md` for full topology.
 
@@ -500,13 +500,13 @@ See `docs/architecture/QUEUE-DESIGN.md` for full topology.
 
 ### Caching Strategy (Summary)
 
-| Tier | Data | TTL |
-|------|------|-----|
-| L1 | Permission decisions | 60s |
-| L1 | Feature flags | 120s |
-| L2 | Published workflow versions | 300s |
-| L2 | API key validation | 60s |
-| L3 | Idempotency responses | 24h |
+| Tier | Data                        | TTL  |
+| ---- | --------------------------- | ---- |
+| L1   | Permission decisions        | 60s  |
+| L1   | Feature flags               | 120s |
+| L2   | Published workflow versions | 300s |
+| L2   | API key validation          | 60s  |
+| L3   | Idempotency responses       | 24h  |
 
 See `docs/architecture/CACHING-STRATEGY.md` for invalidation rules.
 
@@ -561,16 +561,16 @@ See `docs/architecture/API-CATALOG.md` for endpoint inventory.
 
 ## 11. Security Architecture (Summary)
 
-| Concern | Approach |
-|---------|----------|
-| Authentication | JWT access + refresh rotation; API keys; OAuth |
-| Authorization | RBAC + ABAC; cached permission evaluation |
-| Secrets | AES-256-GCM field encryption; DEK per workspace |
-| Webhooks | HMAC signatures; timestamp tolerance; idempotency |
-| Transport | TLS termination at ingress; HSTS |
-| Headers | Helmet defaults; strict CORS in production |
-| Rate limiting | Redis sliding window per IP, user, API key |
-| Input validation | Zod at boundary; mass assignment protection |
+| Concern          | Approach                                          |
+| ---------------- | ------------------------------------------------- |
+| Authentication   | JWT access + refresh rotation; API keys; OAuth    |
+| Authorization    | RBAC + ABAC; cached permission evaluation         |
+| Secrets          | AES-256-GCM field encryption; DEK per workspace   |
+| Webhooks         | HMAC signatures; timestamp tolerance; idempotency |
+| Transport        | TLS termination at ingress; HSTS                  |
+| Headers          | Helmet defaults; strict CORS in production        |
+| Rate limiting    | Redis sliding window per IP, user, API key        |
+| Input validation | Zod at boundary; mass assignment protection       |
 
 Full detail: `docs/security/SECURITY-MODEL.md`.
 
@@ -591,13 +591,13 @@ flowchart LR
 
 ### Standard Attributes
 
-| Attribute | Source |
-|-----------|--------|
+| Attribute        | Source                          |
+| ---------------- | ------------------------------- |
 | `correlation.id` | `X-Correlation-Id` or generated |
-| `tenant.id` | Workspace ID |
-| `user.id` | Authenticated user |
-| `workflow.id` | Execution context |
-| `execution.id` | Execution context |
+| `tenant.id`      | Workspace ID                    |
+| `user.id`        | Authenticated user              |
+| `workflow.id`    | Execution context               |
+| `execution.id`   | Execution context               |
 
 See `docs/architecture/OBSERVABILITY.md` for dashboard and alert definitions.
 
@@ -647,7 +647,7 @@ All configuration validated at startup via `@flowforge/config` (Zod). Fail fast 
 
 ```typescript
 // packages/config — API process
-loadApiConfig(process.env);  // DATABASE_URL, REDIS_URL, JWT_SECRET, ...
+loadApiConfig(process.env); // DATABASE_URL, REDIS_URL, JWT_SECRET, ...
 ```
 
 ### Graceful Shutdown
@@ -670,46 +670,46 @@ Both processes trap `SIGTERM`/`SIGINT`:
 
 ## 15. Testing Strategy
 
-| Layer | Test Type | Tools |
-|-------|-----------|-------|
-| Domain | Unit tests | Jest |
-| Application | Service tests with in-memory repos | Jest |
+| Layer          | Test Type                             | Tools                              |
+| -------------- | ------------------------------------- | ---------------------------------- |
+| Domain         | Unit tests                            | Jest                               |
+| Application    | Service tests with in-memory repos    | Jest                               |
 | Infrastructure | Integration tests with Testcontainers | Jest + PostgreSQL/Redis containers |
-| API | E2E tests | Supertest |
-| Worker | Processor tests | Jest + BullMQ test utilities |
-| Contracts | Schema snapshot tests | Zod |
+| API            | E2E tests                             | Supertest                          |
+| Worker         | Processor tests                       | Jest + BullMQ test utilities       |
+| Contracts      | Schema snapshot tests                 | Zod                                |
 
 ---
 
 ## 16. Architecture Decision Records
 
-| ADR | Decision |
-|-----|----------|
-| [0001](../adr/0001-monorepo-structure.md) | pnpm monorepo with `apps/` + `packages/` |
+| ADR                                               | Decision                                           |
+| ------------------------------------------------- | -------------------------------------------------- |
+| [0001](../adr/0001-monorepo-structure.md)         | pnpm monorepo with `apps/` + `packages/`           |
 | [0002](../adr/0002-prisma-repository-boundary.md) | Clean Architecture with Prisma behind repositories |
-| [0003](../adr/0003-outbox-first-events.md) | Transactional outbox for all domain events |
-| [0004](../adr/0004-workspace-tenancy.md) | Workspace as tenant isolation boundary |
-| [0005](../adr/0005-cqrs-scope.md) | Pragmatic CQRS — not full event sourcing |
+| [0003](../adr/0003-outbox-first-events.md)        | Transactional outbox for all domain events         |
+| [0004](../adr/0004-workspace-tenancy.md)          | Workspace as tenant isolation boundary             |
+| [0005](../adr/0005-cqrs-scope.md)                 | Pragmatic CQRS — not full event sourcing           |
 
 ---
 
 ## 17. Related Documents
 
-| Document | Description |
-|----------|-------------|
-| [PRD](../product/PRD.md) | Product requirements and feature specs |
-| [DOMAIN-MODEL.md](./DOMAIN-MODEL.md) | Aggregates, entities, value objects |
-| [ERD.md](./ERD.md) | Entity-relationship diagram (~45 tables) |
-| [EVENT-CATALOG.md](./EVENT-CATALOG.md) | Domain events and messaging |
-| [API-CATALOG.md](./API-CATALOG.md) | REST endpoint inventory |
-| [QUEUE-DESIGN.md](./QUEUE-DESIGN.md) | BullMQ topology |
-| [CACHING-STRATEGY.md](./CACHING-STRATEGY.md) | Redis caching |
-| [OBSERVABILITY.md](./OBSERVABILITY.md) | Telemetry design |
+| Document                                     | Description                              |
+| -------------------------------------------- | ---------------------------------------- |
+| [PRD](../product/PRD.md)                     | Product requirements and feature specs   |
+| [DOMAIN-MODEL.md](./DOMAIN-MODEL.md)         | Aggregates, entities, value objects      |
+| [ERD.md](./ERD.md)                           | Entity-relationship diagram (~45 tables) |
+| [EVENT-CATALOG.md](./EVENT-CATALOG.md)       | Domain events and messaging              |
+| [API-CATALOG.md](./API-CATALOG.md)           | REST endpoint inventory                  |
+| [QUEUE-DESIGN.md](./QUEUE-DESIGN.md)         | BullMQ topology                          |
+| [CACHING-STRATEGY.md](./CACHING-STRATEGY.md) | Redis caching                            |
+| [OBSERVABILITY.md](./OBSERVABILITY.md)       | Telemetry design                         |
 
 ---
 
 ## 18. Document History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 0.1.0 | 2026-07-14 | Initial architecture document |
+| Version | Date       | Changes                       |
+| ------- | ---------- | ----------------------------- |
+| 0.1.0   | 2026-07-14 | Initial architecture document |

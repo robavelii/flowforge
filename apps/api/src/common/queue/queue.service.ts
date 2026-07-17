@@ -63,9 +63,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id;
   }
 
-  async enqueueWebhookOutbound(
-    payload: WebhookOutboundJobPayload,
-  ): Promise<string | undefined> {
+  async enqueueWebhookOutbound(payload: WebhookOutboundJobPayload): Promise<string | undefined> {
     const job = await this.webhookOutboundQueue.add('deliver', payload, {
       jobId: `wh-out-${payload.deliveryId}`,
     });
@@ -73,9 +71,7 @@ export class QueueService implements OnModuleDestroy {
     return job.id;
   }
 
-  async enqueueNotificationSend(
-    payload: NotificationSendJobPayload,
-  ): Promise<string | undefined> {
+  async enqueueNotificationSend(payload: NotificationSendJobPayload): Promise<string | undefined> {
     const job = await this.notificationQueue.add('send', payload, {
       jobId: `notif-${payload.notificationId}`,
     });

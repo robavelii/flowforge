@@ -63,25 +63,26 @@ flowchart TB
 
 ### Services
 
-| Service | Package | Process | Scaling |
-|---------|---------|---------|---------|
-| API | `apps/api` | NestJS HTTP server | Horizontal (stateless) |
-| Worker | `apps/worker` | BullMQ consumers | Horizontal by profile |
-| Docs | `apps/docs` | Docusaurus static site | CDN |
+| Service | Package       | Process                | Scaling                |
+| ------- | ------------- | ---------------------- | ---------------------- |
+| API     | `apps/api`    | NestJS HTTP server     | Horizontal (stateless) |
+| Worker  | `apps/worker` | BullMQ consumers       | Horizontal by profile  |
+| Docs    | `apps/docs`   | Docusaurus static site | CDN                    |
 
 ---
 
 ## Environments
 
-| Environment | Purpose | URL Pattern | Data |
-|-------------|---------|-------------|------|
-| **local** | Developer machines | `localhost:3000` | Docker Compose |
-| **staging** | Pre-production validation | `staging.flowforge.dev` | Isolated staging DB |
-| **production** | Customer-facing | `api.flowforge.dev` | Production DB with replicas |
+| Environment    | Purpose                   | URL Pattern             | Data                        |
+| -------------- | ------------------------- | ----------------------- | --------------------------- |
+| **local**      | Developer machines        | `localhost:3000`        | Docker Compose              |
+| **staging**    | Pre-production validation | `staging.flowforge.dev` | Isolated staging DB         |
+| **production** | Customer-facing           | `api.flowforge.dev`     | Production DB with replicas |
 
 ### Environment Parity
 
 Staging mirrors production topology at reduced scale:
+
 - 2 API instances, 1 worker each profile
 - PostgreSQL primary + 1 read replica
 - Redis single node (production: cluster)
@@ -91,12 +92,12 @@ Staging mirrors production topology at reduced scale:
 
 ## Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Node.js | ≥ 20.0.0 |
-| pnpm | ≥ 9.0.0 |
-| Docker | ≥ 24.0 |
-| Docker Compose | ≥ 2.20 |
+| Tool              | Version                     |
+| ----------------- | --------------------------- |
+| Node.js           | ≥ 20.0.0                    |
+| pnpm              | ≥ 9.0.0                     |
+| Docker            | ≥ 24.0                      |
+| Docker Compose    | ≥ 2.20                      |
 | PostgreSQL client | 16+ (for manual migrations) |
 
 ---
@@ -155,17 +156,17 @@ docker/
 
 ### Services in `compose.yml`
 
-| Service | Image | Port |
-|---------|-------|------|
-| postgres | postgres:16-alpine | 5432 |
-| redis | redis:7-alpine | 6379 |
-| minio | minio/minio | 9000, 9001 |
-| api | flowforge-api:local | 3000 |
-| worker | flowforge-worker:local | 3001 |
+| Service        | Image                        | Port       |
+| -------------- | ---------------------------- | ---------- |
+| postgres       | postgres:16-alpine           | 5432       |
+| redis          | redis:7-alpine               | 6379       |
+| minio          | minio/minio                  | 9000, 9001 |
+| api            | flowforge-api:local          | 3000       |
+| worker         | flowforge-worker:local       | 3001       |
 | otel-collector | otel/opentelemetry-collector | 4317, 4318 |
-| prometheus | prom/prometheus | 9090 |
-| grafana | grafana/grafana | 3001 |
-| loki | grafana/loki | 3100 |
+| prometheus     | prom/prometheus              | 9090       |
+| grafana        | grafana/grafana              | 3001       |
+| loki           | grafana/loki                 | 3100       |
 
 ### Build Images
 
@@ -182,14 +183,14 @@ docker compose up -d
 
 **Kubernetes** (EKS, GKE, or AKS) with the following resources:
 
-| Resource | Replicas | Resources |
-|----------|----------|-----------|
-| `Deployment/flowforge-api` | 3–10 (HPA) | 512Mi–1Gi RAM, 0.5–1 CPU |
-| `Deployment/flowforge-worker-execution` | 2–20 (HPA) | 1–2Gi RAM, 1–2 CPU |
-| `Deployment/flowforge-worker-webhook` | 2–5 | 512Mi RAM, 0.5 CPU |
-| `Deployment/flowforge-worker-projection` | 1–2 | 512Mi RAM, 0.5 CPU |
-| `StatefulSet/postgresql` or managed RDS | 1 primary + 2 replicas | Per load |
-| `StatefulSet/redis` or ElastiCache | 3 node cluster | Per load |
+| Resource                                 | Replicas               | Resources                |
+| ---------------------------------------- | ---------------------- | ------------------------ |
+| `Deployment/flowforge-api`               | 3–10 (HPA)             | 512Mi–1Gi RAM, 0.5–1 CPU |
+| `Deployment/flowforge-worker-execution`  | 2–20 (HPA)             | 1–2Gi RAM, 1–2 CPU       |
+| `Deployment/flowforge-worker-webhook`    | 2–5                    | 512Mi RAM, 0.5 CPU       |
+| `Deployment/flowforge-worker-projection` | 1–2                    | 512Mi RAM, 0.5 CPU       |
+| `StatefulSet/postgresql` or managed RDS  | 1 primary + 2 replicas | Per load                 |
+| `StatefulSet/redis` or ElastiCache       | 3 node cluster         | Per load                 |
 
 ### Ingress
 
@@ -278,7 +279,7 @@ spec:
       containers:
         - name: migrate
           image: flowforge-api:{version}
-          command: ["pnpm", "db:migrate:deploy"]
+          command: ['pnpm', 'db:migrate:deploy']
           envFrom:
             - secretRef: { name: flowforge-secrets }
       restartPolicy: Never
@@ -292,27 +293,27 @@ From `@flowforge/config`:
 
 ### API Service
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NODE_ENV` | No | `development` | Environment |
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
-| `REDIS_URL` | Yes | — | Redis connection string |
-| `JWT_SECRET` | Prod | — | JWT signing secret (min 32 chars) |
-| `API_PORT` | No | `3000` | HTTP port |
-| `API_PREFIX` | No | `api` | Route prefix |
-| `CORS_ORIGINS` | No | `*` | Comma-separated origins |
-| `MINIO_*` | Yes | — | Object storage config |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | — | OpenTelemetry collector |
-| `LOG_LEVEL` | No | `info` | Pino log level |
+| Variable                      | Required | Default       | Description                       |
+| ----------------------------- | -------- | ------------- | --------------------------------- |
+| `NODE_ENV`                    | No       | `development` | Environment                       |
+| `DATABASE_URL`                | Yes      | —             | PostgreSQL connection string      |
+| `REDIS_URL`                   | Yes      | —             | Redis connection string           |
+| `JWT_SECRET`                  | Prod     | —             | JWT signing secret (min 32 chars) |
+| `API_PORT`                    | No       | `3000`        | HTTP port                         |
+| `API_PREFIX`                  | No       | `api`         | Route prefix                      |
+| `CORS_ORIGINS`                | No       | `*`           | Comma-separated origins           |
+| `MINIO_*`                     | Yes      | —             | Object storage config             |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No       | —             | OpenTelemetry collector           |
+| `LOG_LEVEL`                   | No       | `info`        | Pino log level                    |
 
 ### Worker Service
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `WORKER_CONCURRENCY` | No | `5` | Default queue concurrency |
-| `WORKER_PROFILES` | No | `all` | Comma-separated worker modules |
-| `DATABASE_URL` | Yes | — | PostgreSQL |
-| `REDIS_URL` | Yes | — | Redis |
+| Variable             | Required | Default | Description                    |
+| -------------------- | -------- | ------- | ------------------------------ |
+| `WORKER_CONCURRENCY` | No       | `5`     | Default queue concurrency      |
+| `WORKER_PROFILES`    | No       | `all`   | Comma-separated worker modules |
+| `DATABASE_URL`       | Yes      | —       | PostgreSQL                     |
+| `REDIS_URL`          | Yes      | —       | Redis                          |
 
 ---
 
@@ -356,12 +357,12 @@ kubectl rollout undo deployment/flowforge-worker-execution
 
 ### Rollback Decision Criteria
 
-| Signal | Action |
-|--------|--------|
-| Error rate > 5% for 5 min post-deploy | Rollback API |
-| Readiness failures > 50% | Rollback all services |
-| Migration job failed | Stop deploy; do not roll out app |
-| DLQ spike > 10x baseline | Investigate; rollback if new code caused |
+| Signal                                | Action                                   |
+| ------------------------------------- | ---------------------------------------- |
+| Error rate > 5% for 5 min post-deploy | Rollback API                             |
+| Readiness failures > 50%              | Rollback all services                    |
+| Migration job failed                  | Stop deploy; do not roll out app         |
+| DLQ spike > 10x baseline              | Investigate; rollback if new code caused |
 
 ---
 

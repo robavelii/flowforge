@@ -35,11 +35,7 @@ export class WebhookEndpointsService {
     return rows.map((r) => this.toDto(r));
   }
 
-  async create(
-    workspaceId: string,
-    userId: string,
-    input: { workflowId: string; name: string },
-  ) {
+  async create(workspaceId: string, userId: string, input: { workflowId: string; name: string }) {
     const workflow = await this.prisma.workflow.findFirst({
       where: { id: input.workflowId, workspaceId, deletedAt: null },
     });
@@ -183,7 +179,7 @@ export class WebhookEndpointsService {
           endpointId: endpoint.id,
           eventId,
           signatureValid: false,
-          payload: (params.payload ?? {}),
+          payload: params.payload ?? {},
           headers: params.headers,
           statusCode: 401,
           errorMessage: 'Invalid signature or timestamp',
@@ -209,7 +205,7 @@ export class WebhookEndpointsService {
         endpointId: endpoint.id,
         eventId,
         signatureValid: true,
-        payload: (params.payload ?? {}),
+        payload: params.payload ?? {},
         headers: params.headers,
         executionId: execution.id,
         statusCode: 202,

@@ -1,12 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { ApiConfig } from '@flowforge/config';
-import {
-  collectDefaultMetrics,
-  Counter,
-  Gauge,
-  Histogram,
-  Registry,
-} from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom-client';
 import { APP_CONFIG } from '../config/config.constants';
 
 @Injectable()
@@ -102,7 +96,10 @@ export class MetricsService {
     this.queueJobs.inc({ queue, result: 'enqueued' });
   }
 
-  recordQueueResult(queue: string, result: 'completed' | 'failed' | 'replayed' | 'discarded'): void {
+  recordQueueResult(
+    queue: string,
+    result: 'completed' | 'failed' | 'replayed' | 'discarded',
+  ): void {
     this.queueJobs.inc({ queue, result });
   }
 
@@ -110,7 +107,10 @@ export class MetricsService {
     this.queueDepth.set({ queue, state }, count);
   }
 
-  recordRateLimit(bucket: 'anonymous' | 'user' | 'api_key', decision: 'allow' | 'block' | 'fail_open'): void {
+  recordRateLimit(
+    bucket: 'anonymous' | 'user' | 'api_key',
+    decision: 'allow' | 'block' | 'fail_open',
+  ): void {
     this.rateLimitDecisions.inc({ bucket, decision });
   }
 

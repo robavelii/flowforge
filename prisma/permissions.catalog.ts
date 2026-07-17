@@ -8,13 +8,7 @@ export type PermissionDef = {
   description: string;
 };
 
-export type SystemRoleSlug =
-  | 'owner'
-  | 'admin'
-  | 'editor'
-  | 'operator'
-  | 'viewer'
-  | 'billing';
+export type SystemRoleSlug = 'owner' | 'admin' | 'editor' | 'operator' | 'viewer' | 'billing';
 
 export const ALL_PERMISSIONS: PermissionDef[] = [
   // Organization
@@ -107,9 +101,9 @@ export const ALL_PERMISSIONS: PermissionDef[] = [
   { key: 'system:outbox', description: 'Replay outbox events' },
 ];
 
-const ownerPermissions = ALL_PERMISSIONS.filter(
-  (p) => !p.key.startsWith('system:'),
-).map((p) => p.key);
+const ownerPermissions = ALL_PERMISSIONS.filter((p) => !p.key.startsWith('system:')).map(
+  (p) => p.key,
+);
 
 export const SYSTEM_ROLE_PERMISSIONS: Record<SystemRoleSlug, string[]> = {
   owner: ownerPermissions,
@@ -208,10 +202,5 @@ export const SYSTEM_ROLE_PERMISSIONS: Record<SystemRoleSlug, string[]> = {
     'timeline:read',
   ],
 
-  billing: [
-    'organization:read',
-    'workspace:read',
-    'billing:read',
-    'billing:manage',
-  ],
+  billing: ['organization:read', 'workspace:read', 'billing:read', 'billing:manage'],
 };

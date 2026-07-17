@@ -1,4 +1,11 @@
-import { createHash, createHmac, createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  createHash,
+  createHmac,
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 import { isIP } from 'node:net';
 import { WebhookDeliveryStatus, type PrismaClient } from '@prisma/client';
 
@@ -19,10 +26,9 @@ function decryptSecret(payload: string, keyMaterial: string): string {
   const key = createHash('sha256').update(keyMaterial).digest();
   const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
   decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-  return Buffer.concat([
-    decipher.update(Buffer.from(dataHex, 'hex')),
-    decipher.final(),
-  ]).toString('utf8');
+  return Buffer.concat([decipher.update(Buffer.from(dataHex, 'hex')), decipher.final()]).toString(
+    'utf8',
+  );
 }
 
 function signWebhookPayload(secret: string, timestamp: string, body: string): string {

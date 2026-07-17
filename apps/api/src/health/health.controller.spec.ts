@@ -34,10 +34,7 @@ describe('HealthController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
-      providers: [
-        HealthService,
-        { provide: APP_CONFIG, useValue: mockConfig },
-      ],
+      providers: [HealthService, { provide: APP_CONFIG, useValue: mockConfig }],
     }).compile();
 
     controller = module.get<HealthController>(HealthController);

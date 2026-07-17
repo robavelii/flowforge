@@ -79,12 +79,12 @@ BullMQ delivers job (at-least-once)
 
 ## Alternatives Rejected
 
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-| Direct BullMQ publish | Dual-write problem; events lost on crash |
-| CDC (Debezium) | Operational complexity; overkill for current scale; harder to filter/transform |
-| Event sourcing | Massive complexity; not needed for workflow automation domain; query patterns need projections |
-| PostgreSQL NOTIFY/LISTEN | Not durable; messages lost if listener down |
+| Alternative              | Reason Rejected                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| Direct BullMQ publish    | Dual-write problem; events lost on crash                                                       |
+| CDC (Debezium)           | Operational complexity; overkill for current scale; harder to filter/transform                 |
+| Event sourcing           | Massive complexity; not needed for workflow automation domain; query patterns need projections |
+| PostgreSQL NOTIFY/LISTEN | Not durable; messages lost if listener down                                                    |
 
 ## Implementation Notes
 

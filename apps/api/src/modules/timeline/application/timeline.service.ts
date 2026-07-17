@@ -54,7 +54,7 @@ export class TimelineService {
     return {
       data,
       meta: {
-        nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (data[data.length - 1]?.id ?? null) : null,
         prevCursor: null,
         hasMore,
       },

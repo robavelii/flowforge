@@ -1,21 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiHeader,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermission } from '../../../common/auth/require-permission.decorator';
 import { Tenant } from '../../../common/tenant/tenant.decorator';
 import type { TenantContextData } from '../../../common/tenant/tenant-context';
 import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
 import { AuditService } from '../application/audit.service';
-import {
-  AuditLogListResponseDto,
-  ListAuditLogsQueryDto,
-  listAuditLogsSchema,
-} from './audit.dto';
+import { AuditLogListResponseDto, ListAuditLogsQueryDto, listAuditLogsSchema } from './audit.dto';
 
 @ApiTags('Audit')
 @ApiBearerAuth('bearer')

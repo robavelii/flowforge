@@ -60,18 +60,14 @@ export async function runExecution(options: RunExecutionOptions): Promise<Execut
   });
 
   const graph = execution.workflowVersion.graphJson as unknown as WorkflowGraph;
-  const nodesByDbKey = new Map(
-    execution.workflowVersion.nodes.map((n) => [n.nodeKey, n] as const),
-  );
+  const nodesByDbKey = new Map(execution.workflowVersion.nodes.map((n) => [n.nodeKey, n] as const));
 
   const ctx: ExecutionContext = {
     executionId,
     workspaceId: execution.workspaceId,
     sandbox: execution.sandbox,
     triggerPayload: (execution.triggerPayload as Record<string, unknown>) ?? {},
-    variables: Object.fromEntries(
-      (graph.variables ?? []).map((v) => [v.key, v.value]),
-    ),
+    variables: Object.fromEntries((graph.variables ?? []).map((v) => [v.key, v.value])),
     nodeOutputs: {},
   };
 

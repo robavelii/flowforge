@@ -37,16 +37,16 @@ Organization (billing entity)
 
 ### Enforcement Layers
 
-| Layer | Mechanism |
-|-------|-----------|
-| **API** | `TenantMiddleware` extracts `X-Workspace-Id`; `TenantGuard` validates membership |
-| **Application** | `TenantContext` injected into all services; required parameter on service methods |
-| **Repository** | All queries include `WHERE workspace_id = ?`; enforced by repository base class |
-| **Prisma Middleware** | Auto-injects `workspaceId` filter on read/write operations |
-| **Cache** | Keys prefixed `ws:{workspaceId}:` |
-| **Queue** | Job envelope includes `workspaceId`; workers validate before processing |
-| **Storage** | MinIO keys: `{workspaceId}/{fileId}` |
-| **PostgreSQL RLS** | Optional production hardening (M7) |
+| Layer                 | Mechanism                                                                         |
+| --------------------- | --------------------------------------------------------------------------------- |
+| **API**               | `TenantMiddleware` extracts `X-Workspace-Id`; `TenantGuard` validates membership  |
+| **Application**       | `TenantContext` injected into all services; required parameter on service methods |
+| **Repository**        | All queries include `WHERE workspace_id = ?`; enforced by repository base class   |
+| **Prisma Middleware** | Auto-injects `workspaceId` filter on read/write operations                        |
+| **Cache**             | Keys prefixed `ws:{workspaceId}:`                                                 |
+| **Queue**             | Job envelope includes `workspaceId`; workers validate before processing           |
+| **Storage**           | MinIO keys: `{workspaceId}/{fileId}`                                              |
+| **PostgreSQL RLS**    | Optional production hardening (M7)                                                |
 
 ### Tenant Context
 
@@ -97,11 +97,11 @@ Workspaces are designed to be **relocatable** to different regions in a future a
 
 ## Alternatives Rejected
 
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-| Database-per-tenant | Provisioning overhead; migration nightmare at scale; cost prohibitive |
-| Schema-per-tenant | Migration complexity (N schemas); connection pool exhaustion |
-| RLS only (no app enforcement) | Insufficient alone; Prisma bypass possible; harder to debug |
+| Alternative                   | Reason Rejected                                                       |
+| ----------------------------- | --------------------------------------------------------------------- |
+| Database-per-tenant           | Provisioning overhead; migration nightmare at scale; cost prohibitive |
+| Schema-per-tenant             | Migration complexity (N schemas); connection pool exhaustion          |
+| RLS only (no app enforcement) | Insufficient alone; Prisma bypass possible; harder to debug           |
 
 ## References
 

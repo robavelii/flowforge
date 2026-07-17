@@ -138,10 +138,7 @@ export class WebhookEndpointsController {
   @ApiOperation({ summary: 'List inbound webhook receipt history' })
   @ApiHeader({ name: 'X-Workspace-Id', required: true })
   @ApiParam({ name: 'id', format: 'uuid' })
-  listInbound(
-    @Tenant() tenant: TenantContextData,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  listInbound(@Tenant() tenant: TenantContextData, @Param('id', ParseUUIDPipe) id: string) {
     return this.endpoints.listInbound(tenant.workspaceId, id);
   }
 }
@@ -269,10 +266,7 @@ export class WebhookDeliveriesController {
   @ApiHeader({ name: 'X-Workspace-Id', required: true })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOkResponse()
-  retry(
-    @Tenant() tenant: TenantContextData,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  retry(@Tenant() tenant: TenantContextData, @Param('id', ParseUUIDPipe) id: string) {
     return this.subscriptions.retry(tenant.workspaceId, id);
   }
 }

@@ -21,9 +21,10 @@ const TOKEN = __ENV.ACCESS_TOKEN || '';
 const WORKSPACE_ID = __ENV.WORKSPACE_ID || '';
 
 export default function () {
-  const headers = TOKEN && WORKSPACE_ID
-    ? { Authorization: `Bearer ${TOKEN}`, 'X-Workspace-Id': WORKSPACE_ID }
-    : {};
+  const headers =
+    TOKEN && WORKSPACE_ID
+      ? { Authorization: `Bearer ${TOKEN}`, 'X-Workspace-Id': WORKSPACE_ID }
+      : {};
 
   const metrics = http.get(`${BASE_URL}/api/v1/metrics`, {
     tags: { endpoint: 'metrics' },

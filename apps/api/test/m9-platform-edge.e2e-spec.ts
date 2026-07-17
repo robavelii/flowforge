@@ -5,12 +5,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { QueueService } from '../src/common/queue/queue.service';
 import { PrismaService } from '../src/persistence/prisma.service';
-import {
-  IdBody,
-  SIMPLE_GRAPH,
-  createE2eApp,
-  registerOwnerWorkspace,
-} from './helpers/e2e-app';
+import { IdBody, SIMPLE_GRAPH, createE2eApp, registerOwnerWorkspace } from './helpers/e2e-app';
 
 describe('M9 Platform edges: billing, admin, timeline, files (e2e)', () => {
   let app: INestApplication<App>;
@@ -102,9 +97,9 @@ describe('M9 Platform edges: billing, admin, timeline, files (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .set('X-Workspace-Id', workspaceId)
       .expect(200);
-    expect(Array.isArray(notifs.body) || Array.isArray((notifs.body as { data?: unknown }).data)).toBe(
-      true,
-    );
+    expect(
+      Array.isArray(notifs.body) || Array.isArray((notifs.body as { data?: unknown }).data),
+    ).toBe(true);
   });
 
   it('lists/revokes API keys and feature flags; deletes secrets and files', async () => {

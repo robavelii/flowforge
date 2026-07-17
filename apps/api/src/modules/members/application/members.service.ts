@@ -30,15 +30,10 @@ export class MembersService {
     });
   }
 
-  async invite(
-    workspaceId: string,
-    actorUserId: string,
-    input: { email: string; role?: string },
-  ) {
+  async invite(workspaceId: string, actorUserId: string, input: { email: string; role?: string }) {
     await this.assertMember(workspaceId, actorUserId, ['owner', 'admin']);
     const email = input.email.toLowerCase().trim();
-    const role =
-      (input.role === 'member' ? 'viewer' : input.role) ?? 'viewer';
+    const role = (input.role === 'member' ? 'viewer' : input.role) ?? 'viewer';
 
     const existingMember = await this.prisma.workspaceMember.findFirst({
       where: {
@@ -243,11 +238,7 @@ export class MembersService {
     await this.prisma.workspaceMember.delete({ where: { id: member.id } });
   }
 
-  private async assertMember(
-    workspaceId: string,
-    userId: string,
-    roles?: string[],
-  ): Promise<void> {
+  private async assertMember(workspaceId: string, userId: string, roles?: string[]): Promise<void> {
     const membership = await this.prisma.workspaceMember.findFirst({
       where: { workspaceId, userId, status: 'active' },
     });

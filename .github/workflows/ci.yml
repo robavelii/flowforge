@@ -125,19 +125,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_DEFAULT_BUCKETS: flowforge
-        ports:
-          - 9000:9000
-        options: >-
-          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
     env:
       DATABASE_URL: postgresql://flowforge:flowforge@localhost:5432/flowforge?schema=public
       REDIS_URL: redis://localhost:6379
@@ -161,6 +148,22 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Start MinIO
+        run: |
+          docker run -d --name flowforge-ci-minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:latest server /data
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9000/minio/health/live >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "MinIO failed to become healthy" >&2
+          docker logs flowforge-ci-minio || true
+          exit 1
       - run: pnpm --filter @flowforge/config build
       - run: pnpm --filter @flowforge/contracts build
       - run: pnpm --filter @flowforge/execution-engine build
@@ -234,4 +237,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
       - run: pnpm db:migrate:deploy
-      - run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --exit-code
+      # Compare applied DB schema to Prisma schema (no shadow DB required)
+      - run: npx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema.prisma --exit-code

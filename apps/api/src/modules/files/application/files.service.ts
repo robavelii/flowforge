@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { FileScanStatus, FileStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { MinioStorageService } from '../../../common/storage/minio-storage.service';

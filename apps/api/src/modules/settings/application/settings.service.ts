@@ -18,10 +18,7 @@ export class SettingsService {
     }));
   }
 
-  async upsert(
-    workspaceId: string,
-    entries: Array<{ key: string; value: unknown }>,
-  ) {
+  async upsert(workspaceId: string, entries: Array<{ key: string; value: unknown }>) {
     const results = [];
     for (const entry of entries) {
       const row = await this.prisma.tenantSetting.upsert({

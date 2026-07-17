@@ -73,9 +73,7 @@ export class WorkspacesService {
       if (defaultPlan) {
         const now = new Date();
         const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-        const periodEnd = new Date(
-          Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
-        );
+        const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
         await tx.subscription.create({
           data: {
             workspaceId: workspace.id,
@@ -167,11 +165,7 @@ export class WorkspacesService {
     });
   }
 
-  private async assertMember(
-    userId: string,
-    workspaceId: string,
-    roles?: string[],
-  ): Promise<void> {
+  private async assertMember(userId: string, workspaceId: string, roles?: string[]): Promise<void> {
     const membership = await this.prisma.workspaceMember.findFirst({
       where: { workspaceId, userId, status: 'active' },
     });

@@ -21,7 +21,7 @@ const config = {
     [
       'classic',
       /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      {
         docs: {
           path: '../../docs',
           routeBasePath: '/',
@@ -32,12 +32,12 @@ const config = {
         theme: {
           customCss: './src/css/custom.css',
         },
-      }),
+      },
     ],
   ],
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
+    {
       navbar: {
         title: 'FlowForge',
         items: [
@@ -62,7 +62,7 @@ const config = {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
       },
-    }),
+    },
 };
 
 export default config;

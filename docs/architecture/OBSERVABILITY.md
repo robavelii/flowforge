@@ -26,25 +26,25 @@ FlowForge implements enterprise-grade observability using **OpenTelemetry** for 
 
 ## Observability Pillars
 
-| Pillar | Tool | Purpose |
-|--------|------|---------|
-| **Logs** | Pino → OTel Collector → Loki | Debugging, audit correlation, incident investigation |
-| **Metrics** | Prometheus | SLIs, SLOs, capacity planning, alerting |
-| **Traces** | OpenTelemetry → Tempo/Jaeger (optional) | Latency analysis, dependency mapping |
-| **Profiles** | (Future) Pyroscope | CPU/memory hot paths |
+| Pillar       | Tool                                    | Purpose                                              |
+| ------------ | --------------------------------------- | ---------------------------------------------------- |
+| **Logs**     | Pino → OTel Collector → Loki            | Debugging, audit correlation, incident investigation |
+| **Metrics**  | Prometheus                              | SLIs, SLOs, capacity planning, alerting              |
+| **Traces**   | OpenTelemetry → Tempo/Jaeger (optional) | Latency analysis, dependency mapping                 |
+| **Profiles** | (Future) Pyroscope                      | CPU/memory hot paths                                 |
 
 ### Context Propagation
 
 Every request and job carries:
 
-| Field | Source | Propagation |
-|-------|--------|-------------|
-| `requestId` | Generated or `X-Request-Id` | HTTP header, log field, span attribute |
-| `correlationId` | Generated or `X-Correlation-Id` | Cross-service, outbox events, BullMQ jobs |
-| `traceId` | OpenTelemetry | W3C `traceparent` header |
-| `spanId` | OpenTelemetry | Current span |
-| `workspaceId` | Tenant context | Log field, span attribute, metric label |
-| `userId` / `apiKeyId` | Auth context | Log field (never log PII beyond ID) |
+| Field                 | Source                          | Propagation                               |
+| --------------------- | ------------------------------- | ----------------------------------------- |
+| `requestId`           | Generated or `X-Request-Id`     | HTTP header, log field, span attribute    |
+| `correlationId`       | Generated or `X-Correlation-Id` | Cross-service, outbox events, BullMQ jobs |
+| `traceId`             | OpenTelemetry                   | W3C `traceparent` header                  |
+| `spanId`              | OpenTelemetry                   | Current span                              |
+| `workspaceId`         | Tenant context                  | Log field, span attribute, metric label   |
+| `userId` / `apiKeyId` | Auth context                    | Log field (never log PII beyond ID)       |
 
 ---
 
@@ -88,13 +88,13 @@ flowchart TB
 
 Services under `docker/monitoring/`:
 
-| Service | Port | Role |
-|---------|------|------|
-| otel-collector | 4317 (gRPC), 4318 (HTTP) | Receives OTLP; routes to backends |
-| prometheus | 9090 | Scrapes `/metrics` endpoints |
-| grafana | 3001 | Dashboards (admin/admin dev only) |
-| loki | 3100 | Log storage |
-| (optional) tempo | 3200 | Trace storage |
+| Service          | Port                     | Role                              |
+| ---------------- | ------------------------ | --------------------------------- |
+| otel-collector   | 4317 (gRPC), 4318 (HTTP) | Receives OTLP; routes to backends |
+| prometheus       | 9090                     | Scrapes `/metrics` endpoints      |
+| grafana          | 3001                     | Dashboards (admin/admin dev only) |
+| loki             | 3100                     | Log storage                       |
+| (optional) tempo | 3200                     | Trace storage                     |
 
 ---
 
@@ -129,14 +129,14 @@ Services under `docker/monitoring/`:
 
 ### Log Levels by Scenario
 
-| Level | Use |
-|-------|-----|
-| `fatal` | Process cannot continue |
-| `error` | Request/job failed; needs investigation |
-| `warn` | Degraded behavior; retry succeeded; rate limit approached |
-| `info` | Business events; request completed; job finished |
-| `debug` | Query details; cache hits/misses |
-| `trace` | Verbose internal state (dev only) |
+| Level   | Use                                                       |
+| ------- | --------------------------------------------------------- |
+| `fatal` | Process cannot continue                                   |
+| `error` | Request/job failed; needs investigation                   |
+| `warn`  | Degraded behavior; retry succeeded; rate limit approached |
+| `info`  | Business events; request completed; job finished          |
+| `debug` | Query details; cache hits/misses                          |
+| `trace` | Verbose internal state (dev only)                         |
 
 ### Redaction
 
@@ -192,11 +192,11 @@ span.setAttributes({
 
 ### Trace Sampling
 
-| Environment | Strategy |
-|-------------|----------|
-| Development | 100% sampling |
-| Staging | 100% sampling |
-| Production | ParentBased(TraceIdRatioBased(0.1)) — 10% root traces; always sample errors |
+| Environment | Strategy                                                                    |
+| ----------- | --------------------------------------------------------------------------- |
+| Development | 100% sampling                                                               |
+| Staging     | 100% sampling                                                               |
+| Production  | ParentBased(TraceIdRatioBased(0.1)) — 10% root traces; always sample errors |
 
 Error spans: always recorded via `recordException` + `setStatus(ERROR)`.
 
@@ -266,13 +266,13 @@ flowforge_api_key_validations_total{result}
 
 ### SLI / SLO Targets (Production)
 
-| SLI | SLO | Measurement Window |
-|-----|-----|-------------------|
-| API availability | 99.9% | 30 days |
-| API latency p99 | < 500ms (non-execution endpoints) | 30 days |
-| Workflow execution success rate | 99.5% | 30 days |
-| Webhook delivery success rate | 99% (after retries) | 30 days |
-| Outbox relay lag p99 | < 5 seconds | 7 days |
+| SLI                             | SLO                               | Measurement Window |
+| ------------------------------- | --------------------------------- | ------------------ |
+| API availability                | 99.9%                             | 30 days            |
+| API latency p99                 | < 500ms (non-execution endpoints) | 30 days            |
+| Workflow execution success rate | 99.5%                             | 30 days            |
+| Webhook delivery success rate   | 99% (after retries)               | 30 days            |
+| Outbox relay lag p99            | < 5 seconds                       | 7 days             |
 
 ---
 
@@ -313,11 +313,11 @@ sum(rate({service=~"flowforge-.*"} | json | level="error" [5m])) by (service)
 
 ### Retention
 
-| Environment | Retention |
-|-------------|-----------|
-| Development | 7 days |
-| Staging | 14 days |
-| Production | 30 days (hot), 90 days (S3 archive via compactor) |
+| Environment | Retention                                         |
+| ----------- | ------------------------------------------------- |
+| Development | 7 days                                            |
+| Staging     | 14 days                                           |
+| Production  | 30 days (hot), 90 days (S3 archive via compactor) |
 
 ---
 
@@ -372,11 +372,11 @@ Implemented per `@flowforge/contracts` `HealthCheck` schema:
 
 ### Endpoints
 
-| Endpoint | Purpose | K8s Probe |
-|----------|---------|-----------|
-| `GET /health/liveness` | Process alive | `livenessProbe` |
-| `GET /health/readiness` | Dependencies OK | `readinessProbe` |
-| `GET /health/startup` | Init complete (migrations, cache warm) | `startupProbe` |
+| Endpoint                | Purpose                                | K8s Probe        |
+| ----------------------- | -------------------------------------- | ---------------- |
+| `GET /health/liveness`  | Process alive                          | `livenessProbe`  |
+| `GET /health/readiness` | Dependencies OK                        | `readinessProbe` |
+| `GET /health/startup`   | Init complete (migrations, cache warm) | `startupProbe`   |
 
 ### Response Shape
 
@@ -404,16 +404,16 @@ Worker health: `GET /health` on worker port reports queue connectivity and activ
 
 ### Alertmanager Rules (Production)
 
-| Alert | Condition | Severity | Runbook |
-|-------|-----------|----------|---------|
-| HighErrorRate | 5xx rate > 1% for 5m | Critical | Check recent deploys, DB connectivity |
-| HighLatency | p99 > 2s for 10m | Warning | Check slow queries, cache hit ratio |
-| PostgresDown | readiness check fails | Critical | Failover to replica |
-| RedisDown | readiness degraded | Warning | Cache bypass active; restore Redis |
-| QueueBacklog | waiting > 5000 for 10m | Warning | Scale workers |
-| DLQGrowing | dlq size increasing 15m | Warning | Inspect failure reasons |
-| OutboxLag | relay lag p99 > 30s | Warning | Check relay worker, DB locks |
-| DiskSpaceLow | < 15% free | Critical | Expand volume, run cleanup |
+| Alert         | Condition               | Severity | Runbook                               |
+| ------------- | ----------------------- | -------- | ------------------------------------- |
+| HighErrorRate | 5xx rate > 1% for 5m    | Critical | Check recent deploys, DB connectivity |
+| HighLatency   | p99 > 2s for 10m        | Warning  | Check slow queries, cache hit ratio   |
+| PostgresDown  | readiness check fails   | Critical | Failover to replica                   |
+| RedisDown     | readiness degraded      | Warning  | Cache bypass active; restore Redis    |
+| QueueBacklog  | waiting > 5000 for 10m  | Warning  | Scale workers                         |
+| DLQGrowing    | dlq size increasing 15m | Warning  | Inspect failure reasons               |
+| OutboxLag     | relay lag p99 > 30s     | Warning  | Check relay worker, DB locks          |
+| DiskSpaceLow  | < 15% free              | Critical | Expand volume, run cleanup            |
 
 ### Notification Channels
 

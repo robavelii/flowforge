@@ -39,7 +39,11 @@ export async function executeNode(
     const key = asString(config['key']);
     const value = asString(config['value']);
     if (!key) {
-      return { status: 'failed', errorCode: 'INVALID_CONFIG', errorMessage: 'Missing variable key' };
+      return {
+        status: 'failed',
+        errorCode: 'INVALID_CONFIG',
+        errorMessage: 'Missing variable key',
+      };
     }
     ctx.variables[key] = value;
     return { status: 'completed', output: { key, value } };

@@ -38,10 +38,7 @@ export async function deliverOutboundWebhook(params: {
     data: delivery.payload,
   });
 
-  const secret = decryptSecret(
-    delivery.subscription.signingSecretEnc,
-    params.encryptionKey,
-  );
+  const secret = decryptSecret(delivery.subscription.signingSecretEnc, params.encryptionKey);
   const signature = signWebhookPayload(secret, timestamp, body);
 
   if (params.skipNetwork) {
@@ -105,9 +102,7 @@ async function markFailure(
   responseBody: string,
 ): Promise<void> {
   const dead = attempt >= MAX_ATTEMPTS;
-  const nextRetryAt = dead
-    ? null
-    : new Date(Date.now() + 1000 * 2 ** Math.min(attempt, 6));
+  const nextRetryAt = dead ? null : new Date(Date.now() + 1000 * 2 ** Math.min(attempt, 6));
 
   await prisma.webhookDelivery.update({
     where: { id: deliveryId },

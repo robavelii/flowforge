@@ -36,10 +36,7 @@ export function decryptSecret(payload: string, keyMaterial: string): string {
   const key = createHash('sha256').update(keyMaterial).digest();
   const decipher = createDecipheriv(ENCRYPTION_ALGO, key, Buffer.from(ivHex, 'hex'));
   decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
-  const decrypted = Buffer.concat([
-    decipher.update(Buffer.from(dataHex, 'hex')),
-    decipher.final(),
-  ]);
+  const decrypted = Buffer.concat([decipher.update(Buffer.from(dataHex, 'hex')), decipher.final()]);
   return decrypted.toString('utf8');
 }
 
@@ -62,4 +59,3 @@ export function parseDurationMs(duration: string): number {
   }
   return amount * mult;
 }
-

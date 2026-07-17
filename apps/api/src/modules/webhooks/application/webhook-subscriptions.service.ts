@@ -1,18 +1,14 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { Prisma, WebhookDeliveryStatus } from '@prisma/client';
 import type { ApiConfig } from '@flowforge/config';
 import { APP_CONFIG } from '../../../config/config.constants';
 import { PrismaService } from '../../../persistence/prisma.service';
+import { encryptSecret, generateOpaqueToken } from '../../../common/utils/crypto.util';
 import {
-  encryptSecret,
-  generateOpaqueToken,
-} from '../../../common/utils/crypto.util';
-import { assertSafeOutboundUrl, assertSafeOutboundUrlResolved } from '../../../common/ssrf/ssrf.util';
+  assertSafeOutboundUrl,
+  assertSafeOutboundUrlResolved,
+} from '../../../common/ssrf/ssrf.util';
 import { QueueService } from '../../../common/queue/queue.service';
 import { AuditService } from '../../audit/application/audit.service';
 import { deliverOutboundWebhook } from '../infrastructure/outbound-delivery';
@@ -146,10 +142,7 @@ export class WebhookSubscriptionsService {
         workspaceId: params.workspaceId,
         deletedAt: null,
         enabled: true,
-        OR: [
-          { eventTypes: { has: params.eventType } },
-          { eventTypes: { has: '*' } },
-        ],
+        OR: [{ eventTypes: { has: params.eventType } }, { eventTypes: { has: '*' } }],
       },
     });
 

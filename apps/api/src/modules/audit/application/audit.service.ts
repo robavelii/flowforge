@@ -78,12 +78,7 @@ export class AuditService {
     }
   }
 
-  async list(params: {
-    workspaceId: string;
-    cursor?: string;
-    limit: number;
-    action?: string;
-  }) {
+  async list(params: { workspaceId: string; cursor?: string; limit: number; action?: string }) {
     const items = await this.read.client.auditLog.findMany({
       where: {
         workspaceId: params.workspaceId,
@@ -104,7 +99,7 @@ export class AuditService {
     return {
       data,
       meta: {
-        nextCursor: hasMore ? data[data.length - 1]?.id ?? null : null,
+        nextCursor: hasMore ? (data[data.length - 1]?.id ?? null) : null,
         prevCursor: null,
         hasMore,
       },

@@ -23,27 +23,27 @@ This document is the authoritative catalog of domain events in FlowForge. All ev
 
 ### Naming
 
-| Element | Convention | Example |
-|---------|------------|---------|
-| Event type | `{Aggregate}{PastTenseVerb}` PascalCase | `WorkflowPublished` |
-| Topic / routing key | `flowforge.{aggregate}.{verb}` kebab-case | `flowforge.workflow.published` |
-| Aggregate ID field | `{aggregate}Id` UUID v7 | `workflowId` |
-| Correlation | `correlationId` UUID | propagated from HTTP `X-Correlation-Id` |
-| Causation | `causationId` UUID | ID of the event/command that caused this event |
+| Element             | Convention                                | Example                                        |
+| ------------------- | ----------------------------------------- | ---------------------------------------------- |
+| Event type          | `{Aggregate}{PastTenseVerb}` PascalCase   | `WorkflowPublished`                            |
+| Topic / routing key | `flowforge.{aggregate}.{verb}` kebab-case | `flowforge.workflow.published`                 |
+| Aggregate ID field  | `{aggregate}Id` UUID v7                   | `workflowId`                                   |
+| Correlation         | `correlationId` UUID                      | propagated from HTTP `X-Correlation-Id`        |
+| Causation           | `causationId` UUID                        | ID of the event/command that caused this event |
 
 ### Classification
 
-| Category | Description | Examples |
-|----------|-------------|----------|
-| **Domain** | State change within a bounded context | `WorkflowCreated`, `MemberAdded` |
-| **Integration** | Cross-context or external side effect trigger | `WebhookDeliveryRequested`, `EmailSendRequested` |
-| **Audit** | Immutable audit trail (also written to `audit_logs`) | `PermissionChanged`, `SecretRotated` |
+| Category        | Description                                          | Examples                                         |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| **Domain**      | State change within a bounded context                | `WorkflowCreated`, `MemberAdded`                 |
+| **Integration** | Cross-context or external side effect trigger        | `WebhookDeliveryRequested`, `EmailSendRequested` |
+| **Audit**       | Immutable audit trail (also written to `audit_logs`) | `PermissionChanged`, `SecretRotated`             |
 
 ### Delivery Guarantees
 
 - **Within a transaction:** domain events are written to `outbox_events` in the same DB transaction as the aggregate mutation.
 - **Between services/processes:** at-least-once delivery via BullMQ relay workers.
-- **Processing:** exactly-once *effect* via inbox deduplication + idempotency keys.
+- **Processing:** exactly-once _effect_ via inbox deduplication + idempotency keys.
 
 ---
 
@@ -164,12 +164,12 @@ sequenceDiagram
 
 ### Failure Handling
 
-| Stage | Failure | Behavior |
-|-------|---------|----------|
+| Stage        | Failure              | Behavior                                                         |
+| ------------ | -------------------- | ---------------------------------------------------------------- |
 | Outbox relay | BullMQ enqueue fails | Row stays `processing`; watchdog resets to `pending` after 5 min |
-| Outbox relay | Max attempts (10) | Row → `failed`; alert fires; manual replay via admin API |
-| Consumer | Handler throws | Job retries with exponential backoff; after max → DLQ |
-| Consumer | Poison message | DLQ + `inbox_events.status=failed`; ops dashboard |
+| Outbox relay | Max attempts (10)    | Row → `failed`; alert fires; manual replay via admin API         |
+| Consumer     | Handler throws       | Job retries with exponential backoff; after max → DLQ            |
+| Consumer     | Poison message       | DLQ + `inbox_events.status=failed`; ops dashboard                |
 
 ---
 
@@ -183,12 +183,12 @@ Every consumer **must** record `(eventId, consumerName)` in `inbox_events` befor
 
 Some handlers additionally guard on business keys:
 
-| Event | Natural Key | Guard |
-|-------|-------------|-------|
-| `WorkflowExecutionStarted` | `executionId` | Skip if execution status ≠ `queued` |
-| `WebhookDeliveryRequested` | `deliveryId` | Skip if delivery status = `delivered` |
-| `EmailSendRequested` | `notificationId` | Skip if notification status = `sent` |
-| `MemberAdded` | `(workspaceId, userId)` | Skip if membership already exists |
+| Event                      | Natural Key             | Guard                                 |
+| -------------------------- | ----------------------- | ------------------------------------- |
+| `WorkflowExecutionStarted` | `executionId`           | Skip if execution status ≠ `queued`   |
+| `WebhookDeliveryRequested` | `deliveryId`            | Skip if delivery status = `delivered` |
+| `EmailSendRequested`       | `notificationId`        | Skip if notification status = `sent`  |
+| `MemberAdded`              | `(workspaceId, userId)` | Skip if membership already exists     |
 
 ### Rule 3: HTTP Idempotency Keys (Command Side)
 
@@ -214,105 +214,105 @@ Scheduler emits `WorkflowTriggerFired` with deterministic `eventId = hash(schedu
 
 ### Identity & Access
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `UserRegistered` | User completes signup | `{ userId, email, displayName }` | Audit, Timeline, Email |
-| `UserEmailVerified` | Email verification confirmed | `{ userId, email, verifiedAt }` | Audit, Timeline |
-| `UserPasswordChanged` | Password reset or change | `{ userId, changedAt }` | Audit, Session (revoke others) |
-| `SessionCreated` | Login success | `{ sessionId, userId, deviceInfo }` | Audit |
-| `SessionRevoked` | Logout or admin revoke | `{ sessionId, userId, reason }` | Audit |
-| `ApiKeyCreated` | API key issued | `{ apiKeyId, workspaceId, scopes[], prefix, expiresAt }` | Audit, Timeline, Cache (invalidate) |
-| `ApiKeyRevoked` | Key revoked | `{ apiKeyId, workspaceId, revokedAt, reason }` | Audit, Cache (invalidate) |
-| `OAuthAccountLinked` | OAuth provider linked | `{ userId, provider, providerAccountId }` | Audit, Timeline |
+| Event Type            | Trigger                      | Payload                                                  | Consumers                           |
+| --------------------- | ---------------------------- | -------------------------------------------------------- | ----------------------------------- |
+| `UserRegistered`      | User completes signup        | `{ userId, email, displayName }`                         | Audit, Timeline, Email              |
+| `UserEmailVerified`   | Email verification confirmed | `{ userId, email, verifiedAt }`                          | Audit, Timeline                     |
+| `UserPasswordChanged` | Password reset or change     | `{ userId, changedAt }`                                  | Audit, Session (revoke others)      |
+| `SessionCreated`      | Login success                | `{ sessionId, userId, deviceInfo }`                      | Audit                               |
+| `SessionRevoked`      | Logout or admin revoke       | `{ sessionId, userId, reason }`                          | Audit                               |
+| `ApiKeyCreated`       | API key issued               | `{ apiKeyId, workspaceId, scopes[], prefix, expiresAt }` | Audit, Timeline, Cache (invalidate) |
+| `ApiKeyRevoked`       | Key revoked                  | `{ apiKeyId, workspaceId, revokedAt, reason }`           | Audit, Cache (invalidate)           |
+| `OAuthAccountLinked`  | OAuth provider linked        | `{ userId, provider, providerAccountId }`                | Audit, Timeline                     |
 
 ### Organization & Workspace
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `OrganizationCreated` | Org created | `{ organizationId, name, slug, ownerId }` | Audit, Timeline |
-| `WorkspaceCreated` | Workspace provisioned | `{ workspaceId, organizationId, name, slug, plan }` | Audit, Timeline, Quota |
-| `WorkspaceUpdated` | Settings changed | `{ workspaceId, changes: Record<string, unknown> }` | Cache (invalidate), Audit |
-| `WorkspaceDeleted` | Soft delete | `{ workspaceId, deletedAt, deletedBy }` | Audit, Cleanup jobs |
-| `MemberInvited` | Invitation sent | `{ invitationId, workspaceId, email, roleId, invitedBy }` | Email, Audit, Timeline |
-| `MemberAdded` | Invitation accepted or direct add | `{ workspaceId, userId, roleId, addedBy }` | Audit, Timeline, Permission cache |
-| `MemberRemoved` | Member removed | `{ workspaceId, userId, removedBy, reason }` | Audit, Timeline, Session revoke |
-| `MemberRoleChanged` | Role updated | `{ workspaceId, userId, previousRoleId, newRoleId, changedBy }` | Audit, Permission cache |
+| Event Type            | Trigger                           | Payload                                                         | Consumers                         |
+| --------------------- | --------------------------------- | --------------------------------------------------------------- | --------------------------------- |
+| `OrganizationCreated` | Org created                       | `{ organizationId, name, slug, ownerId }`                       | Audit, Timeline                   |
+| `WorkspaceCreated`    | Workspace provisioned             | `{ workspaceId, organizationId, name, slug, plan }`             | Audit, Timeline, Quota            |
+| `WorkspaceUpdated`    | Settings changed                  | `{ workspaceId, changes: Record<string, unknown> }`             | Cache (invalidate), Audit         |
+| `WorkspaceDeleted`    | Soft delete                       | `{ workspaceId, deletedAt, deletedBy }`                         | Audit, Cleanup jobs               |
+| `MemberInvited`       | Invitation sent                   | `{ invitationId, workspaceId, email, roleId, invitedBy }`       | Email, Audit, Timeline            |
+| `MemberAdded`         | Invitation accepted or direct add | `{ workspaceId, userId, roleId, addedBy }`                      | Audit, Timeline, Permission cache |
+| `MemberRemoved`       | Member removed                    | `{ workspaceId, userId, removedBy, reason }`                    | Audit, Timeline, Session revoke   |
+| `MemberRoleChanged`   | Role updated                      | `{ workspaceId, userId, previousRoleId, newRoleId, changedBy }` | Audit, Permission cache           |
 
 ### Workflow
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `WorkflowCreated` | New workflow draft | `{ workflowId, workspaceId, name, createdBy }` | Audit, Timeline, Search index |
-| `WorkflowUpdated` | Draft metadata/graph edit | `{ workflowId, workspaceId, version, changeSummary }` | Search index, Cache |
-| `WorkflowPublished` | Draft → published | `{ workflowId, workspaceId, versionId, versionNumber, publishedBy }` | Scheduler, Cache, Audit, Timeline |
-| `WorkflowUnpublished` | Active → draft/disabled | `{ workflowId, workspaceId, unpublishedBy, reason }` | Scheduler (cancel triggers), Cache |
-| `WorkflowDeleted` | Soft delete | `{ workflowId, workspaceId, deletedBy }` | Scheduler, Search, Cache |
-| `WorkflowRolledBack` | Revert to prior version | `{ workflowId, workspaceId, fromVersionId, toVersionId, rolledBackBy }` | Scheduler, Cache, Audit |
+| Event Type            | Trigger                   | Payload                                                                 | Consumers                          |
+| --------------------- | ------------------------- | ----------------------------------------------------------------------- | ---------------------------------- |
+| `WorkflowCreated`     | New workflow draft        | `{ workflowId, workspaceId, name, createdBy }`                          | Audit, Timeline, Search index      |
+| `WorkflowUpdated`     | Draft metadata/graph edit | `{ workflowId, workspaceId, version, changeSummary }`                   | Search index, Cache                |
+| `WorkflowPublished`   | Draft → published         | `{ workflowId, workspaceId, versionId, versionNumber, publishedBy }`    | Scheduler, Cache, Audit, Timeline  |
+| `WorkflowUnpublished` | Active → draft/disabled   | `{ workflowId, workspaceId, unpublishedBy, reason }`                    | Scheduler (cancel triggers), Cache |
+| `WorkflowDeleted`     | Soft delete               | `{ workflowId, workspaceId, deletedBy }`                                | Scheduler, Search, Cache           |
+| `WorkflowRolledBack`  | Revert to prior version   | `{ workflowId, workspaceId, fromVersionId, toVersionId, rolledBackBy }` | Scheduler, Cache, Audit            |
 
 ### Execution
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `WorkflowExecutionQueued` | Trigger fired, execution created | `{ executionId, workflowId, workspaceId, triggerType, triggerPayload }` | Metrics, Timeline |
-| `WorkflowExecutionStarted` | Worker picks up execution | `{ executionId, workflowId, workspaceId, startedAt }` | Metrics, Audit |
-| `WorkflowExecutionCompleted` | All nodes succeeded | `{ executionId, workflowId, workspaceId, durationMs, outputSummary }` | Metrics, Timeline, Billing usage |
-| `WorkflowExecutionFailed` | Unrecoverable failure | `{ executionId, workflowId, workspaceId, errorCode, errorMessage, failedNodeId }` | Metrics, Timeline, Notification |
-| `WorkflowExecutionCancelled` | User or system cancel | `{ executionId, workflowId, workspaceId, cancelledBy, reason }` | Metrics, Timeline |
-| `NodeExecutionStarted` | Node begins | `{ nodeExecutionId, executionId, nodeId, nodeType }` | Metrics |
-| `NodeExecutionCompleted` | Node succeeds | `{ nodeExecutionId, executionId, nodeId, durationMs, outputSizeBytes }` | Metrics |
-| `NodeExecutionFailed` | Node fails (may retry) | `{ nodeExecutionId, executionId, nodeId, attempt, errorCode, willRetry }` | Metrics, Notification |
-| `NodeExecutionSkipped` | Condition branch skipped | `{ nodeExecutionId, executionId, nodeId, reason }` | Metrics |
+| Event Type                   | Trigger                          | Payload                                                                           | Consumers                        |
+| ---------------------------- | -------------------------------- | --------------------------------------------------------------------------------- | -------------------------------- |
+| `WorkflowExecutionQueued`    | Trigger fired, execution created | `{ executionId, workflowId, workspaceId, triggerType, triggerPayload }`           | Metrics, Timeline                |
+| `WorkflowExecutionStarted`   | Worker picks up execution        | `{ executionId, workflowId, workspaceId, startedAt }`                             | Metrics, Audit                   |
+| `WorkflowExecutionCompleted` | All nodes succeeded              | `{ executionId, workflowId, workspaceId, durationMs, outputSummary }`             | Metrics, Timeline, Billing usage |
+| `WorkflowExecutionFailed`    | Unrecoverable failure            | `{ executionId, workflowId, workspaceId, errorCode, errorMessage, failedNodeId }` | Metrics, Timeline, Notification  |
+| `WorkflowExecutionCancelled` | User or system cancel            | `{ executionId, workflowId, workspaceId, cancelledBy, reason }`                   | Metrics, Timeline                |
+| `NodeExecutionStarted`       | Node begins                      | `{ nodeExecutionId, executionId, nodeId, nodeType }`                              | Metrics                          |
+| `NodeExecutionCompleted`     | Node succeeds                    | `{ nodeExecutionId, executionId, nodeId, durationMs, outputSizeBytes }`           | Metrics                          |
+| `NodeExecutionFailed`        | Node fails (may retry)           | `{ nodeExecutionId, executionId, nodeId, attempt, errorCode, willRetry }`         | Metrics, Notification            |
+| `NodeExecutionSkipped`       | Condition branch skipped         | `{ nodeExecutionId, executionId, nodeId, reason }`                                | Metrics                          |
 
 ### Webhooks
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `WebhookReceived` | Incoming webhook hit | `{ webhookId, endpointId, workspaceId, payloadHash, receivedAt }` | Execution (trigger), Audit |
-| `WebhookDeliveryRequested` | Outbound delivery scheduled | `{ deliveryId, endpointUrl, workspaceId, eventType, payload }` | Webhook worker |
-| `WebhookDeliverySucceeded` | 2xx response | `{ deliveryId, workspaceId, statusCode, durationMs }` | Audit, Timeline, Metrics |
-| `WebhookDeliveryFailed` | Non-2xx or timeout | `{ deliveryId, workspaceId, statusCode, attempt, willRetry }` | Audit, Metrics, DLQ (if exhausted) |
+| Event Type                 | Trigger                     | Payload                                                           | Consumers                          |
+| -------------------------- | --------------------------- | ----------------------------------------------------------------- | ---------------------------------- |
+| `WebhookReceived`          | Incoming webhook hit        | `{ webhookId, endpointId, workspaceId, payloadHash, receivedAt }` | Execution (trigger), Audit         |
+| `WebhookDeliveryRequested` | Outbound delivery scheduled | `{ deliveryId, endpointUrl, workspaceId, eventType, payload }`    | Webhook worker                     |
+| `WebhookDeliverySucceeded` | 2xx response                | `{ deliveryId, workspaceId, statusCode, durationMs }`             | Audit, Timeline, Metrics           |
+| `WebhookDeliveryFailed`    | Non-2xx or timeout          | `{ deliveryId, workspaceId, statusCode, attempt, willRetry }`     | Audit, Metrics, DLQ (if exhausted) |
 
 ### Secrets & Integrations
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `SecretCreated` | Secret stored | `{ secretId, workspaceId, name, createdBy }` | Audit, Timeline |
-| `SecretUpdated` | Secret rotated/updated | `{ secretId, workspaceId, updatedBy, version }` | Audit, Cache (invalidate connections) |
-| `SecretDeleted` | Secret removed | `{ secretId, workspaceId, deletedBy }` | Audit, Cache |
-| `IntegrationConnected` | OAuth integration linked | `{ integrationId, workspaceId, provider, connectedBy }` | Audit, Timeline |
-| `IntegrationDisconnected` | Integration removed | `{ integrationId, workspaceId, disconnectedBy }` | Audit, Cache |
+| Event Type                | Trigger                  | Payload                                                 | Consumers                             |
+| ------------------------- | ------------------------ | ------------------------------------------------------- | ------------------------------------- |
+| `SecretCreated`           | Secret stored            | `{ secretId, workspaceId, name, createdBy }`            | Audit, Timeline                       |
+| `SecretUpdated`           | Secret rotated/updated   | `{ secretId, workspaceId, updatedBy, version }`         | Audit, Cache (invalidate connections) |
+| `SecretDeleted`           | Secret removed           | `{ secretId, workspaceId, deletedBy }`                  | Audit, Cache                          |
+| `IntegrationConnected`    | OAuth integration linked | `{ integrationId, workspaceId, provider, connectedBy }` | Audit, Timeline                       |
+| `IntegrationDisconnected` | Integration removed      | `{ integrationId, workspaceId, disconnectedBy }`        | Audit, Cache                          |
 
 ### Notifications
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
+| Event Type              | Trigger                  | Payload                                                               | Consumers           |
+| ----------------------- | ------------------------ | --------------------------------------------------------------------- | ------------------- |
 | `NotificationRequested` | Any notification trigger | `{ notificationId, workspaceId, channel, template, recipient, data }` | Notification worker |
-| `NotificationSent` | Delivery confirmed | `{ notificationId, workspaceId, channel, sentAt }` | Audit, Timeline |
-| `NotificationFailed` | Delivery failed | `{ notificationId, workspaceId, channel, error, attempt }` | Metrics, DLQ |
+| `NotificationSent`      | Delivery confirmed       | `{ notificationId, workspaceId, channel, sentAt }`                    | Audit, Timeline     |
+| `NotificationFailed`    | Delivery failed          | `{ notificationId, workspaceId, channel, error, attempt }`            | Metrics, DLQ        |
 
 ### Billing & Quotas (M8)
 
-| Event Type | Trigger | Payload | Consumers |
-|------------|---------|---------|-----------|
-| `QuotaThresholdReached` | Usage hits threshold | `{ workspaceId, quotaType, current, limit, thresholdPercent }` | Notification, Audit |
-| `QuotaExceeded` | Hard limit hit | `{ workspaceId, quotaType, action }` | API guard, Notification |
+| Event Type              | Trigger              | Payload                                                        | Consumers               |
+| ----------------------- | -------------------- | -------------------------------------------------------------- | ----------------------- |
+| `QuotaThresholdReached` | Usage hits threshold | `{ workspaceId, quotaType, current, limit, thresholdPercent }` | Notification, Audit     |
+| `QuotaExceeded`         | Hard limit hit       | `{ workspaceId, quotaType, action }`                           | API guard, Notification |
 
 ---
 
 ## Consumer Mapping
 
-| Consumer | Subscribed Events | Queue | Concurrency |
-|----------|-------------------|-------|-------------|
-| `outbox-relay` | *(polls DB, not event-driven)* | `internal.outbox-relay` | 1 per instance |
-| `execution-engine` | `WorkflowExecutionQueued`, `WebhookReceived` | `workflow.execution` | 10–50 |
-| `scheduler` | `WorkflowPublished`, `WorkflowUnpublished`, `WorkflowDeleted` | `workflow.scheduler` | 2 |
-| `webhook-delivery` | `WebhookDeliveryRequested` | `webhook.outbound` | 20 |
-| `notification` | `NotificationRequested` | `notification.send` | 10 |
-| `audit-writer` | All `Audit`-classified events | `audit.write` | 5 |
-| `timeline-projector` | Domain events (allowlist) | `timeline.project` | 5 |
-| `search-indexer` | Workflow/member events | `search.index` | 3 |
-| `cache-invalidator` | Mutations affecting cached entities | `cache.invalidate` | 5 |
-| `metrics-aggregator` | Execution/node events | `metrics.aggregate` | 3 |
+| Consumer             | Subscribed Events                                             | Queue                   | Concurrency    |
+| -------------------- | ------------------------------------------------------------- | ----------------------- | -------------- |
+| `outbox-relay`       | _(polls DB, not event-driven)_                                | `internal.outbox-relay` | 1 per instance |
+| `execution-engine`   | `WorkflowExecutionQueued`, `WebhookReceived`                  | `workflow.execution`    | 10–50          |
+| `scheduler`          | `WorkflowPublished`, `WorkflowUnpublished`, `WorkflowDeleted` | `workflow.scheduler`    | 2              |
+| `webhook-delivery`   | `WebhookDeliveryRequested`                                    | `webhook.outbound`      | 20             |
+| `notification`       | `NotificationRequested`                                       | `notification.send`     | 10             |
+| `audit-writer`       | All `Audit`-classified events                                 | `audit.write`           | 5              |
+| `timeline-projector` | Domain events (allowlist)                                     | `timeline.project`      | 5              |
+| `search-indexer`     | Workflow/member events                                        | `search.index`          | 3              |
+| `cache-invalidator`  | Mutations affecting cached entities                           | `cache.invalidate`      | 5              |
+| `metrics-aggregator` | Execution/node events                                         | `metrics.aggregate`     | 3              |
 
 ---
 
@@ -354,12 +354,12 @@ GROUP BY 1, 2;
 
 ### Metrics to Alert On
 
-| Metric | Threshold | Severity |
-|--------|-----------|----------|
-| `outbox_events_pending_count` | > 1000 for 5 min | Warning |
-| `outbox_events_failed_count` | > 0 | Critical |
-| `inbox_events_failed_count` | > 10 in 15 min | Warning |
-| `outbox_relay_lag_seconds` | p99 > 30s | Warning |
+| Metric                        | Threshold        | Severity |
+| ----------------------------- | ---------------- | -------- |
+| `outbox_events_pending_count` | > 1000 for 5 min | Warning  |
+| `outbox_events_failed_count`  | > 0              | Critical |
+| `inbox_events_failed_count`   | > 10 in 15 min   | Warning  |
+| `outbox_relay_lag_seconds`    | p99 > 30s        | Warning  |
 
 ---
 

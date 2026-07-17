@@ -44,8 +44,6 @@ describe('Health (e2e)', () => {
   });
 
   it('/api/v1/health/startup (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/api/v1/health/startup')
-      .expect(200);
+    return request(app.getHttpServer()).get('/api/v1/health/startup').expect(200);
   });
 });

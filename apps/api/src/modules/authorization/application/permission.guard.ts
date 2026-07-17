@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../../../common/auth/public.decorator';
 import { SKIP_TENANT_KEY } from '../../../common/tenant/skip-tenant.decorator';
@@ -81,9 +76,7 @@ export class PermissionGuard implements CanActivate {
       ABAC_RESOURCE_KEY,
       [context.getHandler(), context.getClass()],
     );
-    let resource: AbacResourceContext | undefined = resolver
-      ? await resolver(request)
-      : undefined;
+    let resource: AbacResourceContext | undefined = resolver ? await resolver(request) : undefined;
 
     if (!resource && required.includes('workflow:delete')) {
       const workflowId = request.params?.['id'];

@@ -34,8 +34,7 @@ describe('OpenAPI document (e2e)', () => {
     expect(register?.requestBody).toBeDefined();
 
     const content = register?.requestBody?.content as
-      | Record<string, { schema?: { $ref?: string } }>
-      | undefined;
+      Record<string, { schema?: { $ref?: string } }> | undefined;
     const schema = content?.['application/json']?.schema;
     expect(schema?.$ref).toContain('RegisterDto');
 

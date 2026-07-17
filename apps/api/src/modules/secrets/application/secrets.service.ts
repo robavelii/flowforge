@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { SecretType } from '@prisma/client';
 import type { ApiConfig } from '@flowforge/config';

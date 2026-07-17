@@ -23,26 +23,26 @@ Adopt **Partial CQRS** — apply command/query separation and event projections 
 
 ### CQRS Applied (Command + Projection)
 
-| Domain | Write Model | Read Model | Projection Trigger |
-|--------|-------------|------------|-------------------|
-| **Activity Timeline** | Domain events | `timeline_events` table | Event consumer |
-| **Audit Logs** | Domain events | `audit_logs` table | Event consumer |
-| **Search Index** | Domain events | PostgreSQL FTS / `search_documents` | Event consumer |
-| **Execution Metrics** | Node/execution events | `execution_metrics` rollups | Metrics aggregator |
-| **Notifications** | `NotificationRequested` event | `notifications` table | Notification worker |
+| Domain                | Write Model                   | Read Model                          | Projection Trigger  |
+| --------------------- | ----------------------------- | ----------------------------------- | ------------------- |
+| **Activity Timeline** | Domain events                 | `timeline_events` table             | Event consumer      |
+| **Audit Logs**        | Domain events                 | `audit_logs` table                  | Event consumer      |
+| **Search Index**      | Domain events                 | PostgreSQL FTS / `search_documents` | Event consumer      |
+| **Execution Metrics** | Node/execution events         | `execution_metrics` rollups         | Metrics aggregator  |
+| **Notifications**     | `NotificationRequested` event | `notifications` table               | Notification worker |
 
 These read models are **eventually consistent** (seconds lag) and optimized for their query patterns.
 
 ### CQRS NOT Applied (Unified Model)
 
-| Domain | Rationale |
-|--------|-----------|
-| **Workflow CRUD** | Read-after-write consistency required; low read volume relative to executions |
-| **User/Auth** | Small data set; strong consistency required |
-| **Workspace/Member management** | Infrequent mutations; permission checks need current state |
-| **Secrets** | Security requires read-from-source; no caching of values |
-| **API Keys** | Low volume; cache-aside sufficient |
-| **Webhook endpoints** | Configuration data; infrequent changes |
+| Domain                          | Rationale                                                                     |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| **Workflow CRUD**               | Read-after-write consistency required; low read volume relative to executions |
+| **User/Auth**                   | Small data set; strong consistency required                                   |
+| **Workspace/Member management** | Infrequent mutations; permission checks need current state                    |
+| **Secrets**                     | Security requires read-from-source; no caching of values                      |
+| **API Keys**                    | Low volume; cache-aside sufficient                                            |
+| **Webhook endpoints**           | Configuration data; infrequent changes                                        |
 
 These domains use **repository pattern with direct reads** from the write model (PostgreSQL).
 
@@ -127,11 +127,11 @@ Otherwise, use unified repository read.
 
 ## Alternatives Rejected
 
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-| Full CQRS everywhere | Massive over-engineering; workflow CRUD needs read-after-write |
-| No CQRS | Timeline/audit/search won't scale; JOIN-heavy queries on hot tables |
-| Separate read database (MongoDB) | Operational complexity; PostgreSQL FTS sufficient for M6 |
+| Alternative                      | Reason Rejected                                                     |
+| -------------------------------- | ------------------------------------------------------------------- |
+| Full CQRS everywhere             | Massive over-engineering; workflow CRUD needs read-after-write      |
+| No CQRS                          | Timeline/audit/search won't scale; JOIN-heavy queries on hot tables |
+| Separate read database (MongoDB) | Operational complexity; PostgreSQL FTS sufficient for M6            |
 
 ## References
 

@@ -1,9 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import type { Plan } from '@prisma/client';
 import { PrismaService } from '../../persistence/prisma.service';
 import { OutboxService } from '../outbox/outbox.service';
@@ -64,12 +59,7 @@ export class QuotaService {
         period,
         BigInt(plan.executionsPerMonth),
       ),
-      this.ensureUsageRow(
-        workspaceId,
-        QUOTA_METRIC.STORAGE_BYTES,
-        period,
-        plan.storageBytes,
-      ),
+      this.ensureUsageRow(workspaceId, QUOTA_METRIC.STORAGE_BYTES, period, plan.storageBytes),
     ]);
 
     const apiCurrent = await this.readApiWindowCount(workspaceId);
@@ -314,10 +304,7 @@ export class QuotaService {
     metric: QuotaMetric,
     row: { currentValue: bigint; limitValue: bigint; periodEnd: Date },
   ): HttpException {
-    const retryAfter = Math.max(
-      1,
-      Math.ceil((row.periodEnd.getTime() - Date.now()) / 1000),
-    );
+    const retryAfter = Math.max(1, Math.ceil((row.periodEnd.getTime() - Date.now()) / 1000));
     return new HttpException(
       {
         message: `Workspace ${metric} quota exceeded`,

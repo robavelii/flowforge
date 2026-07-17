@@ -52,9 +52,7 @@ export class FeatureFlagsService {
         enabled: input.enabled,
         description: input.description ?? undefined,
         metadata:
-          input.metadata === undefined
-            ? undefined
-            : (input.metadata as Prisma.InputJsonValue),
+          input.metadata === undefined ? undefined : (input.metadata as Prisma.InputJsonValue),
       },
       create: {
         workspaceId,
@@ -62,9 +60,7 @@ export class FeatureFlagsService {
         enabled: input.enabled,
         description: input.description ?? null,
         metadata:
-          input.metadata === undefined
-            ? undefined
-            : (input.metadata as Prisma.InputJsonValue),
+          input.metadata === undefined ? undefined : (input.metadata as Prisma.InputJsonValue),
       },
     });
     await this.invalidate(workspaceId, input.key);

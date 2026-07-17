@@ -1,21 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiHeader,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermission } from '../../../common/auth/require-permission.decorator';
 import { Tenant } from '../../../common/tenant/tenant.decorator';
 import type { TenantContextData } from '../../../common/tenant/tenant-context';
 import { ZodValidationPipe } from '../../../common/validation/zod-validation.pipe';
 import { TimelineService } from '../application/timeline.service';
-import {
-  ListTimelineQueryDto,
-  listTimelineSchema,
-  TimelineListResponseDto,
-} from './timeline.dto';
+import { ListTimelineQueryDto, listTimelineSchema, TimelineListResponseDto } from './timeline.dto';
 
 @ApiTags('Timeline')
 @ApiBearerAuth('bearer')

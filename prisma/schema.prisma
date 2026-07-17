@@ -382,6 +382,7 @@ model InboxEvent {
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@unique([consumerId, eventId])
+  @@index([workspaceId, processedAt], map: "inbox_events_workspace_processed_at_idx")
   @@map("inbox_events")
 }
 
@@ -552,6 +553,7 @@ model IdempotencyRecord {
   @@unique([actorKey, key])
   @@index([workspaceId])
   @@index([expiresAt])
+  @@index([workspaceId, expiresAt], map: "idempotency_records_workspace_expires_at_idx")
   @@map("idempotency_records")
 }
 
@@ -701,20 +703,22 @@ model WorkflowTag {
 
 /// Full-text search projection (M3); refined in M6
 model SearchDocument {
-  id          String   @id @default(uuid()) @db.Uuid
-  workspaceId String   @map("workspace_id") @db.Uuid
-  entityType  String   @map("entity_type") @db.VarChar(64)
-  entityId    String   @map("entity_id") @db.Uuid
-  title       String   @db.VarChar(512)
-  body        String   @db.Text
-  metadata    Json?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           String                       @id @default(uuid()) @db.Uuid
+  workspaceId  String                       @map("workspace_id") @db.Uuid
+  entityType   String                       @map("entity_type") @db.VarChar(64)
+  entityId     String                       @map("entity_id") @db.Uuid
+  title        String                       @db.VarChar(512)
+  body         String                       @db.Text
+  metadata     Json?
+  searchVector Unsupported("tsvector")?     @default(dbgenerated("(setweight(to_tsvector('english'::regconfig, (COALESCE(title, ''::character varying))::text), 'A'::\"char\") || setweight(to_tsvector('english'::regconfig, COALESCE(body, ''::text)), 'B'::\"char\"))")) @map("search_vector")
+  createdAt    DateTime                     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, entityType, entityId])
   @@index([workspaceId, entityType])
+  @@index([searchVector], type: Gin, map: "search_documents_search_vector_idx")
   @@map("search_documents")
 }
 
@@ -749,6 +753,7 @@ model WorkflowExecution {
   metrics         ExecutionMetric[]
 
   @@index([workspaceId, status, createdAt(sort: Desc)])
+  @@index([workspaceId, createdAt(sort: Desc)], map: "workflow_executions_workspace_created_at_idx")
   @@index([workspaceId, workflowVersionId])
   @@index([workflowId])
   @@unique([workspaceId, idempotencyKey])

@@ -13,5 +13,4 @@ export const ApiWorkspaceHeader = (): MethodDecorator & ClassDecorator =>
 export const OPENAPI_BODY_REQUIRED = 'openapiBodyRequired';
 
 /** Marker for future lint/tests ensuring request DTOs are Swagger-documented. */
-export const RequiresOpenApiBody = (): MethodDecorator =>
-  SetMetadata(OPENAPI_BODY_REQUIRED, true);
+export const RequiresOpenApiBody = (): MethodDecorator => SetMetadata(OPENAPI_BODY_REQUIRED, true);

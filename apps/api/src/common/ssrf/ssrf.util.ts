@@ -1,11 +1,7 @@
 import { isIP } from 'node:net';
 import { lookup } from 'node:dns/promises';
 
-const BLOCKED_HOSTNAMES = new Set([
-  'localhost',
-  'metadata.google.internal',
-  'metadata.google',
-]);
+const BLOCKED_HOSTNAMES = new Set(['localhost', 'metadata.google.internal', 'metadata.google']);
 
 function isPrivateIpv4(ip: string): boolean {
   const parts = ip.split('.').map(Number);

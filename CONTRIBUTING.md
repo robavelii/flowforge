@@ -72,6 +72,7 @@ pnpm --filter @flowforge/api test -- --coverage
 ```
 
 Test categories:
+
 - **Unit tests** — domain logic, services, utilities
 - **Integration tests** — repository tests with test database
 - **E2E tests** — full HTTP request/response cycles
@@ -84,15 +85,19 @@ Significant design decisions require an ADR in `docs/adr/`. Use the template:
 # ADR-NNNN: Title
 
 ## Status
+
 Proposed | Accepted | Deprecated | Superseded
 
 ## Context
+
 What is the issue?
 
 ## Decision
+
 What is the change?
 
 ## Consequences
+
 What are the trade-offs?
 ```
 

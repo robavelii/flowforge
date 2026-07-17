@@ -61,11 +61,11 @@ sequenceDiagram
 
 #### Token Details
 
-| Token | Algorithm | Storage | TTL |
-|-------|-----------|---------|-----|
-| Access token | HS256 (dev) / RS256 (prod) | Client memory | 15 min |
-| Refresh token | Opaque UUID | HttpOnly Secure cookie or client vault | 7 days |
-| JWT secret | — | Env / secrets manager | Rotated quarterly |
+| Token         | Algorithm                  | Storage                                | TTL               |
+| ------------- | -------------------------- | -------------------------------------- | ----------------- |
+| Access token  | HS256 (dev) / RS256 (prod) | Client memory                          | 15 min            |
+| Refresh token | Opaque UUID                | HttpOnly Secure cookie or client vault | 7 days            |
+| JWT secret    | —                          | Env / secrets manager                  | Rotated quarterly |
 
 Configuration from `@flowforge/config`:
 
@@ -97,13 +97,13 @@ JWT_REFRESH_EXPIRES_IN=7d
 
 ### API Keys
 
-| Property | Value |
-|----------|-------|
-| Format | `ff_live_{32 random bytes base62}` / `ff_test_{...}` |
-| Storage | SHA-256 hash only; prefix stored for identification (`ff_live_abcd`) |
-| Scopes | Subset of workspace permissions (see PERMISSION-MATRIX) |
-| Expiration | Optional; enforced at validation |
-| Rotation | Create new → migrate → revoke old (no gap) |
+| Property   | Value                                                                |
+| ---------- | -------------------------------------------------------------------- |
+| Format     | `ff_live_{32 random bytes base62}` / `ff_test_{...}`                 |
+| Storage    | SHA-256 hash only; prefix stored for identification (`ff_live_abcd`) |
+| Scopes     | Subset of workspace permissions (see PERMISSION-MATRIX)              |
+| Expiration | Optional; enforced at validation                                     |
+| Rotation   | Create new → migrate → revoke old (no gap)                           |
 
 API key validation path:
 
@@ -172,15 +172,15 @@ Set by `TenantMiddleware` from `X-Workspace-Id` header after membership validati
 
 ### Isolation Guarantees
 
-| Layer | Mechanism |
-|-------|-----------|
-| API | TenantGuard rejects requests without valid workspace membership |
-| Application | Services receive TenantContext; cannot operate cross-tenant |
-| Repository | All queries include `WHERE workspace_id = ?` |
-| Cache | Keys prefixed with `ws:{workspaceId}:` |
-| Queues | Job payloads include `workspaceId`; workers validate |
-| Files (MinIO) | Object keys: `{workspaceId}/{fileId}`; presigned URLs scoped |
-| Search | FTS queries filtered by workspace_id |
+| Layer         | Mechanism                                                       |
+| ------------- | --------------------------------------------------------------- |
+| API           | TenantGuard rejects requests without valid workspace membership |
+| Application   | Services receive TenantContext; cannot operate cross-tenant     |
+| Repository    | All queries include `WHERE workspace_id = ?`                    |
+| Cache         | Keys prefixed with `ws:{workspaceId}:`                          |
+| Queues        | Job payloads include `workspaceId`; workers validate            |
+| Files (MinIO) | Object keys: `{workspaceId}/{fileId}`; presigned URLs scoped    |
+| Search        | FTS queries filtered by workspace_id                            |
 
 ---
 
@@ -196,14 +196,14 @@ Set by `TenantMiddleware` from `X-Workspace-Id` header after membership validati
 
 ### Platform Secrets
 
-| Secret | Storage |
-|--------|---------|
+| Secret                      | Storage                           |
+| --------------------------- | --------------------------------- |
 | `JWT_SECRET` / JWT key pair | Env / AWS Secrets Manager / Vault |
-| `DATABASE_URL` | Env / secrets manager |
-| `REDIS_URL` | Env / secrets manager |
-| MinIO credentials | Env / secrets manager |
-| OAuth client secrets | Env / secrets manager |
-| Encryption master key (KEK) | Env / KMS |
+| `DATABASE_URL`              | Env / secrets manager             |
+| `REDIS_URL`                 | Env / secrets manager             |
+| MinIO credentials           | Env / secrets manager             |
+| OAuth client secrets        | Env / secrets manager             |
+| Encryption master key (KEK) | Env / KMS                         |
 
 ### Environment Overrides
 
@@ -215,15 +215,15 @@ Set by `TenantMiddleware` from `X-Workspace-Id` header after membership validati
 
 ## Encryption
 
-| Data | At Rest | In Transit |
-|------|---------|------------|
-| Passwords | argon2id hash | TLS 1.2+ |
-| User secrets | AES-256-GCM | TLS 1.2+ |
-| OAuth tokens | AES-256-GCM | TLS 1.2+ |
-| API key plaintext | Never stored | TLS 1.2+ |
-| Database | PostgreSQL TDE / disk encryption (infra) | TLS |
-| Redis | Disk encryption (infra); no app-level for cache | TLS (prod) |
-| MinIO objects | Server-side encryption | TLS |
+| Data              | At Rest                                         | In Transit |
+| ----------------- | ----------------------------------------------- | ---------- |
+| Passwords         | argon2id hash                                   | TLS 1.2+   |
+| User secrets      | AES-256-GCM                                     | TLS 1.2+   |
+| OAuth tokens      | AES-256-GCM                                     | TLS 1.2+   |
+| API key plaintext | Never stored                                    | TLS 1.2+   |
+| Database          | PostgreSQL TDE / disk encryption (infra)        | TLS        |
+| Redis             | Disk encryption (infra); no app-level for cache | TLS (prod) |
+| MinIO objects     | Server-side encryption                          | TLS        |
 
 ---
 
@@ -241,12 +241,14 @@ Set by `TenantMiddleware` from `X-Workspace-Id` header after membership validati
 ### Webhook Security
 
 **Incoming:**
+
 - HMAC-SHA256 signature verification (`X-FlowForge-Signature`)
 - Timestamp tolerance: 5 minutes (replay protection)
 - Idempotency on `(endpointId, externalEventId)`
 - IP allowlist (optional per endpoint)
 
 **Outgoing:**
+
 - HMAC-SHA256 signing with subscription secret
 - TLS required for subscriber URLs (HTTPS only)
 - SSRF protection: block private IP ranges in outbound URL validation
@@ -259,20 +261,20 @@ Set by `TenantMiddleware` from `X-Workspace-Id` header after membership validati
 
 ## Threat Model (STRIDE)
 
-| Threat | Category | Mitigation |
-|--------|----------|------------|
-| Stolen JWT | Spoofing | Short TTL, refresh rotation, session revocation |
-| API key leak | Spoofing | Scoped permissions, expiration, rotation, audit |
-| Cross-tenant data access | Tampering/Elevation | workspace_id on all queries, TenantGuard, repo enforcement |
-| SQL injection | Tampering | Prisma parameterized queries, input validation |
-| XSS in workflow output | Tampering | Output sanitization, CSP headers |
-| Webhook replay | Repudiation | Timestamp + signature, idempotency keys |
-| Mass credential stuffing | Denial | Rate limiting, account lockout (5 failures → 15 min) |
-| Worker resource exhaustion | Denial | Queue bulkheads, execution timeouts, tenant quotas |
-| Secret exfiltration via logs | Info Disclosure | Pino redaction, secret masking |
-| Audit log tampering | Repudiation | Append-only audit table, no DELETE permission |
-| SSRF via webhook actions | Elevation | URL validation, block RFC1918 addresses |
-| Privilege escalation via role edit | Elevation | `role:manage` permission, audit, cannot edit system roles |
+| Threat                             | Category            | Mitigation                                                 |
+| ---------------------------------- | ------------------- | ---------------------------------------------------------- |
+| Stolen JWT                         | Spoofing            | Short TTL, refresh rotation, session revocation            |
+| API key leak                       | Spoofing            | Scoped permissions, expiration, rotation, audit            |
+| Cross-tenant data access           | Tampering/Elevation | workspace_id on all queries, TenantGuard, repo enforcement |
+| SQL injection                      | Tampering           | Prisma parameterized queries, input validation             |
+| XSS in workflow output             | Tampering           | Output sanitization, CSP headers                           |
+| Webhook replay                     | Repudiation         | Timestamp + signature, idempotency keys                    |
+| Mass credential stuffing           | Denial              | Rate limiting, account lockout (5 failures → 15 min)       |
+| Worker resource exhaustion         | Denial              | Queue bulkheads, execution timeouts, tenant quotas         |
+| Secret exfiltration via logs       | Info Disclosure     | Pino redaction, secret masking                             |
+| Audit log tampering                | Repudiation         | Append-only audit table, no DELETE permission              |
+| SSRF via webhook actions           | Elevation           | URL validation, block RFC1918 addresses                    |
+| Privilege escalation via role edit | Elevation           | `role:manage` permission, audit, cannot edit system roles  |
 
 ### Trust Boundaries
 
@@ -301,15 +303,15 @@ flowchart TB
 
 All security-relevant actions emit audit records:
 
-| Event | Data Captured |
-|-------|---------------|
-| Login success/failure | userId, IP, userAgent, method |
-| Password change | userId, IP |
-| API key create/revoke | workspaceId, actorId, keyPrefix |
-| Permission change | workspaceId, targetUserId, before/after roles |
-| Secret access | workspaceId, secretId, actorId (metadata only) |
-| Failed authorization | workspaceId, actorId, requiredPermission, resource |
-| Rate limit exceeded | scope, identifier, endpoint |
+| Event                 | Data Captured                                      |
+| --------------------- | -------------------------------------------------- |
+| Login success/failure | userId, IP, userAgent, method                      |
+| Password change       | userId, IP                                         |
+| API key create/revoke | workspaceId, actorId, keyPrefix                    |
+| Permission change     | workspaceId, targetUserId, before/after roles      |
+| Secret access         | workspaceId, secretId, actorId (metadata only)     |
+| Failed authorization  | workspaceId, actorId, requiredPermission, resource |
+| Rate limit exceeded   | scope, identifier, endpoint                        |
 
 Audit logs are immutable (`INSERT` only), retained 1 year minimum.
 
@@ -319,12 +321,12 @@ Audit logs are immutable (`INSERT` only), retained 1 year minimum.
 
 ### Severity Levels
 
-| Level | Example | Response Time |
-|-------|---------|---------------|
-| SEV1 | Active data breach, cross-tenant leak | Immediate; revoke tokens, isolate |
-| SEV2 | API key leak, OAuth compromise | < 1 hour; revoke affected credentials |
-| SEV3 | Elevated failed auth rate | < 4 hours; investigate, rate limit |
-| SEV4 | Single account compromise | < 24 hours; reset credentials |
+| Level | Example                               | Response Time                         |
+| ----- | ------------------------------------- | ------------------------------------- |
+| SEV1  | Active data breach, cross-tenant leak | Immediate; revoke tokens, isolate     |
+| SEV2  | API key leak, OAuth compromise        | < 1 hour; revoke affected credentials |
+| SEV3  | Elevated failed auth rate             | < 4 hours; investigate, rate limit    |
+| SEV4  | Single account compromise             | < 24 hours; reset credentials         |
 
 ### Token Revocation Procedures
 

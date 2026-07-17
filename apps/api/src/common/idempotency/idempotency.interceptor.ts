@@ -87,9 +87,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
                   workspaceId: request.tenant?.workspaceId ?? null,
                   statusCode,
                   responseBody:
-                    body === undefined
-                      ? Prisma.JsonNull
-                      : (body as Prisma.InputJsonValue),
+                    body === undefined ? Prisma.JsonNull : (body as Prisma.InputJsonValue),
                 });
               }
             },

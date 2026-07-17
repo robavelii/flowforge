@@ -2,11 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { PrismaService } from '../src/persistence/prisma.service';
-import {
-  AuthBody,
-  createE2eApp,
-  registerOwnerWorkspace,
-} from './helpers/e2e-app';
+import { AuthBody, createE2eApp, registerOwnerWorkspace } from './helpers/e2e-app';
 
 describe('M9 Auth sessions & password (e2e)', () => {
   let app: INestApplication<App>;
@@ -112,9 +108,7 @@ describe('M9 Auth sessions & password (e2e)', () => {
   });
 
   it('starts OAuth when client id is configured', async () => {
-    const res = await request(app.getHttpServer())
-      .get('/api/v1/auth/oauth/github')
-      .expect(200);
+    const res = await request(app.getHttpServer()).get('/api/v1/auth/oauth/github').expect(200);
     expect((res.body as { authorizationUrl: string }).authorizationUrl).toContain('github.com');
     expect((res.body as { state: string }).state).toBeTruthy();
   });

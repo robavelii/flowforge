@@ -1,4 +1,5 @@
-import { nextReadyNodes, type WorkflowGraph } from '../src/index';
+import { nextReadyNodes } from './dag';
+import type { WorkflowGraph } from './types';
 
 describe('DAG traversal', () => {
   const graph: WorkflowGraph = {

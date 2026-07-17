@@ -129,10 +129,7 @@ export class FilesController {
   @ApiHeader({ name: 'X-Workspace-Id', required: true })
   @ApiParam({ name: 'fileId', format: 'uuid' })
   @ApiOkResponse({ type: DownloadUrlResponseDto })
-  downloadUrl(
-    @Tenant() tenant: TenantContextData,
-    @Param('fileId', ParseUUIDPipe) fileId: string,
-  ) {
+  downloadUrl(@Tenant() tenant: TenantContextData, @Param('fileId', ParseUUIDPipe) fileId: string) {
     return this.files.downloadUrl(tenant.workspaceId, fileId);
   }
 

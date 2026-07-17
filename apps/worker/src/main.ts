@@ -240,7 +240,10 @@ function main(): void {
   const webhookWorker = new Worker<WebhookOutboundJobPayload>(
     QUEUES.WEBHOOK_OUTBOUND,
     async (job) => {
-      logger.info({ deliveryId: job.data.deliveryId, jobId: job.id }, 'Delivering outbound webhook');
+      logger.info(
+        { deliveryId: job.data.deliveryId, jobId: job.id },
+        'Delivering outbound webhook',
+      );
       await deliverOutboundWebhookJob({
         prisma,
         deliveryId: job.data.deliveryId,

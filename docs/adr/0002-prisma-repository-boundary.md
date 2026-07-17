@@ -78,7 +78,9 @@ Complex queries use Specification objects translated to Prisma `where` clauses i
 ```typescript
 // domain/specifications/active-workflows.spec.ts
 class ActiveWorkflowsSpec implements Specification<Workflow> {
-  toQuery(): WorkflowQuery { return { status: 'published', deletedAt: null }; }
+  toQuery(): WorkflowQuery {
+    return { status: 'published', deletedAt: null };
+  }
 }
 
 // infrastructure: spec → Prisma where clause
@@ -109,12 +111,12 @@ class ActiveWorkflowsSpec implements Specification<Workflow> {
 
 ## Alternatives Rejected
 
-| Alternative | Reason Rejected |
-|-------------|-----------------|
-| Prisma in services directly | Violates Clean Architecture; untestable; Prisma leaks everywhere |
-| TypeORM | Less type-safe; migration tooling inferior; declining ecosystem momentum |
-| Drizzle | Less mature migration story; smaller NestJS integration ecosystem |
-| Raw SQL (pg) | Too much boilerplate for 45 entities; loses type safety |
+| Alternative                 | Reason Rejected                                                          |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Prisma in services directly | Violates Clean Architecture; untestable; Prisma leaks everywhere         |
+| TypeORM                     | Less type-safe; migration tooling inferior; declining ecosystem momentum |
+| Drizzle                     | Less mature migration story; smaller NestJS integration ecosystem        |
+| Raw SQL (pg)                | Too much boilerplate for 45 entities; loses type safety                  |
 
 ## Enforcement
 

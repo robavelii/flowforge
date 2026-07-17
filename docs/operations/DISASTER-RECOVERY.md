@@ -21,11 +21,11 @@ This document defines FlowForge's disaster recovery (DR) strategy: backup proced
 
 ## Recovery Objectives
 
-| Tier | Components | RPO | RTO |
-|------|------------|-----|-----|
-| **Tier 1 — Critical** | PostgreSQL (primary data) | 5 min | 1 hour |
-| **Tier 2 — Important** | Redis (queues, cache) | 15 min | 30 min |
-| **Tier 3 — Important** | MinIO/S3 (files) | 1 hour | 2 hours |
+| Tier                     | Components                | RPO      | RTO     |
+| ------------------------ | ------------------------- | -------- | ------- |
+| **Tier 1 — Critical**    | PostgreSQL (primary data) | 5 min    | 1 hour  |
+| **Tier 2 — Important**   | Redis (queues, cache)     | 15 min   | 30 min  |
+| **Tier 3 — Important**   | MinIO/S3 (files)          | 1 hour   | 2 hours |
 | **Tier 4 — Operational** | Prometheus, Loki, Grafana | 24 hours | 4 hours |
 
 ### Definitions
@@ -35,12 +35,12 @@ This document defines FlowForge's disaster recovery (DR) strategy: backup proced
 
 ### Business Impact
 
-| Downtime Duration | Impact |
-|-------------------|--------|
-| < 15 min | Minimal — queued webhooks retry, executions resume |
-| 15 min – 1 hour | Moderate — customer-visible delays, SLA credit may apply |
-| 1 – 4 hours | Significant — workflow executions fail, webhook DLQ grows |
-| > 4 hours | Severe — data integrity review required, executive escalation |
+| Downtime Duration | Impact                                                        |
+| ----------------- | ------------------------------------------------------------- |
+| < 15 min          | Minimal — queued webhooks retry, executions resume            |
+| 15 min – 1 hour   | Moderate — customer-visible delays, SLA credit may apply      |
+| 1 – 4 hours       | Significant — workflow executions fail, webhook DLQ grows     |
+| > 4 hours         | Severe — data integrity review required, executive escalation |
 
 ---
 
@@ -72,13 +72,13 @@ flowchart TB
 
 ### Data Classification
 
-| Data Store | Contents | Loss Impact | Recovery Source |
-|------------|----------|-------------|-----------------|
-| PostgreSQL | All application state | **Critical** | Backup + WAL |
-| Redis | Cache, queues, rate limits | **Recoverable** | Rebuild from DB + re-queue |
-| MinIO/S3 | File uploads, large payloads | **Important** | Cross-region replica |
-| Loki | Logs | **Low** | Accept loss; extend retention after recovery |
-| Prometheus | Metrics | **Low** | Accept loss; historical gaps |
+| Data Store | Contents                     | Loss Impact     | Recovery Source                              |
+| ---------- | ---------------------------- | --------------- | -------------------------------------------- |
+| PostgreSQL | All application state        | **Critical**    | Backup + WAL                                 |
+| Redis      | Cache, queues, rate limits   | **Recoverable** | Rebuild from DB + re-queue                   |
+| MinIO/S3   | File uploads, large payloads | **Important**   | Cross-region replica                         |
+| Loki       | Logs                         | **Low**         | Accept loss; extend retention after recovery |
+| Prometheus | Metrics                      | **Low**         | Accept loss; historical gaps                 |
 
 ---
 
@@ -86,12 +86,12 @@ flowchart TB
 
 ### PostgreSQL
 
-| Method | Frequency | Retention | Storage |
-|--------|-----------|-----------|---------|
-| Continuous WAL archiving | Real-time | 7 days | S3 bucket `flowforge-wal/` |
-| Full snapshot (pg_dump / pgBackRest) | Daily at 02:00 UTC | 30 days | S3 bucket `flowforge-backups/` |
-| Weekly full backup | Sunday 02:00 UTC | 90 days | S3 Glacier |
-| Cross-region copy | Daily | 30 days | S3 secondary region |
+| Method                               | Frequency          | Retention | Storage                        |
+| ------------------------------------ | ------------------ | --------- | ------------------------------ |
+| Continuous WAL archiving             | Real-time          | 7 days    | S3 bucket `flowforge-wal/`     |
+| Full snapshot (pg_dump / pgBackRest) | Daily at 02:00 UTC | 30 days   | S3 bucket `flowforge-backups/` |
+| Weekly full backup                   | Sunday 02:00 UTC   | 90 days   | S3 Glacier                     |
+| Cross-region copy                    | Daily              | 30 days   | S3 secondary region            |
 
 #### Backup Verification
 
@@ -109,29 +109,29 @@ pg_restore -h $NEW_PGHOST -U flowforge -d flowforge flowforge_20260714.dump
 
 ### Redis
 
-| Method | Frequency | Retention |
-|--------|-----------|-----------|
-| RDB snapshot | Every 15 min | 24 hours |
-| AOF persistence | Enabled | 24 hours |
+| Method          | Frequency    | Retention |
+| --------------- | ------------ | --------- |
+| RDB snapshot    | Every 15 min | 24 hours  |
+| AOF persistence | Enabled      | 24 hours  |
 
 **Note:** Redis is treated as reconstructable. Primary recovery path is redeploy + warm cache from DB. Queue jobs in-flight at failure time may need DLQ replay.
 
 ### MinIO / S3
 
-| Method | Frequency |
-|--------|-----------|
-| Server-side versioning | Enabled |
-| Cross-region replication | Continuous |
-| Lifecycle policy | Move to IA after 90 days |
+| Method                   | Frequency                |
+| ------------------------ | ------------------------ |
+| Server-side versioning   | Enabled                  |
+| Cross-region replication | Continuous               |
+| Lifecycle policy         | Move to IA after 90 days |
 
 ### Configuration & Secrets
 
-| Item | Backup Method |
-|------|---------------|
-| Kubernetes manifests | Git (source of truth) |
-| Secrets | Secrets manager with versioning |
-| Environment configs | Git (`docker/`, `.env.example`) |
-| Grafana dashboards | Git (`docker/monitoring/grafana/`) |
+| Item                 | Backup Method                      |
+| -------------------- | ---------------------------------- |
+| Kubernetes manifests | Git (source of truth)              |
+| Secrets              | Secrets manager with versioning    |
+| Environment configs  | Git (`docker/`, `.env.example`)    |
+| Grafana dashboards   | Git (`docker/monitoring/grafana/`) |
 
 ---
 
@@ -219,14 +219,14 @@ sequenceDiagram
 
 ## Failover Scenarios
 
-| Scenario | Automated? | Failover Method |
-|----------|------------|-----------------|
-| API pod crash | Yes | K8s restart + HPA |
-| Worker pod crash | Yes | K8s restart; job returns to queue |
-| PostgreSQL primary crash | Partial | Managed service auto-failover; manual for self-hosted |
-| Redis node crash | Yes | Redis Sentinel / Cluster failover |
-| AZ failure | Partial | Multi-AZ deployment; K8s reschedules pods |
-| Region failure | No | Manual DR region activation |
+| Scenario                 | Automated? | Failover Method                                       |
+| ------------------------ | ---------- | ----------------------------------------------------- |
+| API pod crash            | Yes        | K8s restart + HPA                                     |
+| Worker pod crash         | Yes        | K8s restart; job returns to queue                     |
+| PostgreSQL primary crash | Partial    | Managed service auto-failover; manual for self-hosted |
+| Redis node crash         | Yes        | Redis Sentinel / Cluster failover                     |
+| AZ failure               | Partial    | Multi-AZ deployment; K8s reschedules pods             |
+| Region failure           | No         | Manual DR region activation                           |
 
 ---
 
@@ -260,12 +260,12 @@ WHERE w.id IS NULL;
 
 ## Communication Plan
 
-| Audience | Channel | Timing |
-|----------|---------|--------|
-| Engineering team | Slack `#incidents` | Immediate |
-| Leadership | Email + Slack | Within 30 min (SEV1/2) |
-| Customers | Status page | Within 60 min (SEV1) |
-| Post-mortem | Internal doc | Within 5 business days |
+| Audience         | Channel            | Timing                 |
+| ---------------- | ------------------ | ---------------------- |
+| Engineering team | Slack `#incidents` | Immediate              |
+| Leadership       | Email + Slack      | Within 30 min (SEV1/2) |
+| Customers        | Status page        | Within 60 min (SEV1)   |
+| Post-mortem      | Internal doc       | Within 5 business days |
 
 ### Status Page Updates
 
@@ -279,17 +279,18 @@ Include: impact scope, affected workspaces (if known), estimated recovery time.
 
 ## DR Testing Schedule
 
-| Test | Frequency | Scope | Success Criteria |
-|------|-----------|-------|------------------|
-| Backup restore (PostgreSQL) | Weekly (automated) | Full restore to test instance | Data integrity checks pass |
-| Failover drill (DB replica promotion) | Quarterly | Staging environment | RTO < 1 hour |
-| Redis recovery | Quarterly | Staging | Cache rebuild < 15 min |
-| Region failover simulation | Annually | DR region (tabletop + partial) | RTO < 4 hours |
-| Migration rollback drill | Per release | Staging | App works with previous schema |
+| Test                                  | Frequency          | Scope                          | Success Criteria               |
+| ------------------------------------- | ------------------ | ------------------------------ | ------------------------------ |
+| Backup restore (PostgreSQL)           | Weekly (automated) | Full restore to test instance  | Data integrity checks pass     |
+| Failover drill (DB replica promotion) | Quarterly          | Staging environment            | RTO < 1 hour                   |
+| Redis recovery                        | Quarterly          | Staging                        | Cache rebuild < 15 min         |
+| Region failover simulation            | Annually           | DR region (tabletop + partial) | RTO < 4 hours                  |
+| Migration rollback drill              | Per release        | Staging                        | App works with previous schema |
 
 ### Test Documentation
 
 Each DR test produces:
+
 - Test date and participants
 - Steps executed vs. runbook
 - Actual RTO/RPO achieved
