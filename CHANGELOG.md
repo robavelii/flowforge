@@ -5,6 +5,17 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-07-17
+
+### Added
+
+- Milestone 9: Full API E2E matrix & release hardening
+- E2E suites for auth sessions/password/OAuth start, org/workspace/roles/members, execution cancel/replay, schedule resume/delete, billing plan change, timeline/notifications, admin outbox/DLQ discard, bulk delete
+- Shared e2e bootstrap helper (`apps/api/test/helpers/e2e-app.ts`)
+- Route inventory (`docs/operations/E2E-ROUTE-INVENTORY.md`) and CI `API E2E` job on `main`
+- Expanded demo seed (`prisma/seed-demo.ts`) + manual verification / deployment docs (from M8 follow-up)
+- `NODE_ENV=test` skips Redis rate-limit buckets so parallel e2e suites do not share anon-IP 429s
+
 ## [0.9.0] - 2026-07-17
 
 ### Added

@@ -39,40 +39,43 @@ export class RateLimitGuard implements CanActivate {
     const request = http.getRequest<AuthedRequest>();
     const response = http.getResponse<Response>();
 
-    const { bucketKey, bucketType, limit } = this.resolveBucket(request);
+    // Shared localhost IP blows through anon limits when Jest runs suites in parallel.
+    if (process.env['NODE_ENV'] !== 'test') {
+      const { bucketKey, bucketType, limit } = this.resolveBucket(request);
 
-    try {
-      const count = await this.redis.client.incr(bucketKey);
-      if (count === 1) {
-        await this.redis.client.expire(bucketKey, WINDOW_SECONDS);
+      try {
+        const count = await this.redis.client.incr(bucketKey);
+        if (count === 1) {
+          await this.redis.client.expire(bucketKey, WINDOW_SECONDS);
+        }
+
+        const ttl = await this.redis.client.ttl(bucketKey);
+        const retryAfter = ttl > 0 ? ttl : WINDOW_SECONDS;
+
+        response.setHeader('X-RateLimit-Limit', String(limit));
+        response.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit - count)));
+        response.setHeader('X-RateLimit-Reset', String(retryAfter));
+
+        if (count > limit) {
+          this.metrics.recordRateLimit(bucketType, 'block');
+          response.setHeader('Retry-After', String(retryAfter));
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.TOO_MANY_REQUESTS,
+              message: 'Rate limit exceeded',
+              error: 'Too Many Requests',
+            },
+            HttpStatus.TOO_MANY_REQUESTS,
+          );
+        }
+        this.metrics.recordRateLimit(bucketType, 'allow');
+      } catch (err) {
+        if (err instanceof HttpException) {
+          throw err;
+        }
+        // Redis unavailable — fail open
+        this.metrics.recordRateLimit(bucketType, 'fail_open');
       }
-
-      const ttl = await this.redis.client.ttl(bucketKey);
-      const retryAfter = ttl > 0 ? ttl : WINDOW_SECONDS;
-
-      response.setHeader('X-RateLimit-Limit', String(limit));
-      response.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit - count)));
-      response.setHeader('X-RateLimit-Reset', String(retryAfter));
-
-      if (count > limit) {
-        this.metrics.recordRateLimit(bucketType, 'block');
-        response.setHeader('Retry-After', String(retryAfter));
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.TOO_MANY_REQUESTS,
-            message: 'Rate limit exceeded',
-            error: 'Too Many Requests',
-          },
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
-      this.metrics.recordRateLimit(bucketType, 'allow');
-    } catch (err) {
-      if (err instanceof HttpException) {
-        throw err;
-      }
-      // Redis unavailable — fail open
-      this.metrics.recordRateLimit(bucketType, 'fail_open');
     }
 
     if (request.tenant?.workspaceId) {

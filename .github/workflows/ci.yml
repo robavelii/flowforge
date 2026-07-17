@@ -81,6 +81,8 @@ jobs:
       MINIO_BUCKET: flowforge
       MINIO_USE_SSL: 'false'
       NODE_ENV: test
+      JWT_SECRET: flowforge-ci-jwt-secret-change-me-min-32-chars
+      SECRETS_ENCRYPTION_KEY: flowforge-ci-secrets-encryption-key-32b
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -97,10 +99,80 @@ jobs:
       - run: pnpm db:migrate:deploy
       - run: pnpm test
 
+  e2e:
+    name: API E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: flowforge
+          POSTGRES_PASSWORD: flowforge
+          POSTGRES_DB: flowforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flowforge -d flowforge"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+          MINIO_DEFAULT_BUCKETS: flowforge
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://flowforge:flowforge@localhost:5432/flowforge?schema=public
+      REDIS_URL: redis://localhost:6379
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: flowforge
+      MINIO_USE_SSL: 'false'
+      NODE_ENV: test
+      JWT_SECRET: flowforge-ci-jwt-secret-change-me-min-32-chars
+      SECRETS_ENCRYPTION_KEY: flowforge-ci-secrets-encryption-key-32b
+      GITHUB_CLIENT_ID: ci-github-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @flowforge/config build
+      - run: pnpm --filter @flowforge/contracts build
+      - run: pnpm --filter @flowforge/execution-engine build
+      - run: pnpm db:generate
+      - run: pnpm db:migrate:deploy
+      - run: pnpm db:seed
+      - run: pnpm --filter @flowforge/api test:e2e
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test]
+    needs: [lint, typecheck, test, e2e]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
