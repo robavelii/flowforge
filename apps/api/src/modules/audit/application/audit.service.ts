@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { PrismaReadService } from '../../../persistence/prisma-read.service';
 import { PrismaService } from '../../../persistence/prisma.service';
 
 export type AuditWriteInput = {
@@ -25,7 +26,10 @@ type TxClient = Omit<
 
 @Injectable()
 export class AuditService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly read: PrismaReadService,
+  ) {}
 
   async write(input: AuditWriteInput, tx?: TxClient): Promise<void> {
     const client = tx ?? this.prisma;
@@ -80,7 +84,7 @@ export class AuditService {
     limit: number;
     action?: string;
   }) {
-    const items = await this.prisma.auditLog.findMany({
+    const items = await this.read.client.auditLog.findMany({
       where: {
         workspaceId: params.workspaceId,
         ...(params.action ? { action: params.action } : {}),

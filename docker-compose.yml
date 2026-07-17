@@ -86,6 +86,7 @@ services:
       - '--web.enable-lifecycle'
     volumes:
       - ./docker/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/monitoring/prometheus-rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     ports:
       - '9090:9090'
@@ -100,6 +101,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: 'false'
     volumes:
       - ./docker/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     ports:
       - '3001:3000'
@@ -117,6 +119,18 @@ services:
       - loki_data:/loki
     ports:
       - '3100:3100'
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: flowforge-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./docker/monitoring/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
 
   api:
     build:
@@ -158,6 +172,7 @@ services:
       REDIS_URL: redis://redis:6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: flowforge-worker
+      WORKER_METRICS_PORT: 3002
     depends_on:
       postgres:
         condition: service_healthy

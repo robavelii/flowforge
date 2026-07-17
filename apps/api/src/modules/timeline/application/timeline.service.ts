@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { PrismaReadService } from '../../../persistence/prisma-read.service';
 import { PrismaService } from '../../../persistence/prisma.service';
 
 @Injectable()
 export class TimelineService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly read: PrismaReadService,
+  ) {}
 
   async project(params: {
     workspaceId: string;
@@ -33,7 +37,7 @@ export class TimelineService {
   }
 
   async list(params: { workspaceId: string; cursor?: string; limit: number }) {
-    const items = await this.prisma.timelineEvent.findMany({
+    const items = await this.read.client.timelineEvent.findMany({
       where: { workspaceId: params.workspaceId },
       orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
       take: params.limit + 1,

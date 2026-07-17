@@ -11,6 +11,7 @@ export const baseConfigSchema = z.object({
 
 export const databaseConfigSchema = z.object({
   DATABASE_URL: z.string().url(),
+  DATABASE_REPLICA_URL: z.string().url().optional(),
 });
 
 export const redisConfigSchema = z.object({
@@ -66,6 +67,7 @@ export const apiConfigSchema = baseConfigSchema
       .default('false')
       .transform((v) => v === 'true'),
     FILE_PRESIGN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+    CLEANUP_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-api'),
   });
@@ -75,6 +77,7 @@ export const workerConfigSchema = baseConfigSchema
   .merge(redisConfigSchema)
   .extend({
     WORKER_CONCURRENCY: z.coerce.number().int().positive().default(5),
+    WORKER_METRICS_PORT: z.coerce.number().int().positive().default(3002),
     SECRETS_ENCRYPTION_KEY: z
       .string()
       .min(32)
@@ -88,6 +91,7 @@ export const workerConfigSchema = baseConfigSchema
       .enum(['true', 'false'])
       .default('false')
       .transform((v) => v === 'true'),
+    CLEANUP_RETENTION_DAYS: z.coerce.number().int().positive().default(90),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-worker'),
   });

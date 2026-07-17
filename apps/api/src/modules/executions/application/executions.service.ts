@@ -10,6 +10,7 @@ import {
   WorkflowStatus,
 } from '@prisma/client';
 import { runExecution } from '@flowforge/execution-engine';
+import { PrismaReadService } from '../../../persistence/prisma-read.service';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { QueueService } from '../../../common/queue/queue.service';
@@ -19,13 +20,14 @@ import { AuditService } from '../../audit/application/audit.service';
 export class ExecutionsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly read: PrismaReadService,
     private readonly queue: QueueService,
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
   ) {}
 
   async list(workspaceId: string, opts: { workflowId?: string; status?: string; limit: number; cursor?: string }) {
-    const items = await this.prisma.workflowExecution.findMany({
+    const items = await this.read.client.workflowExecution.findMany({
       where: {
         workspaceId,
         ...(opts.workflowId ? { workflowId: opts.workflowId } : {}),

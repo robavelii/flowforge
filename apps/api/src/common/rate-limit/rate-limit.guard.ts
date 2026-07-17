@@ -8,6 +8,7 @@ import {
 import type { Request, Response } from 'express';
 import { RedisService } from '../redis/redis.service';
 import type { AuthUser } from '../auth/current-user.decorator';
+import { MetricsService } from '../../metrics/metrics.service';
 
 const WINDOW_SECONDS = 60;
 
@@ -24,14 +25,17 @@ type AuthedRequest = Request & {
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    private readonly metrics: MetricsService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
     const request = http.getRequest<AuthedRequest>();
     const response = http.getResponse<Response>();
 
-    const { bucketKey, limit } = this.resolveBucket(request);
+    const { bucketKey, bucketType, limit } = this.resolveBucket(request);
 
     try {
       const count = await this.redis.client.incr(bucketKey);
@@ -47,6 +51,7 @@ export class RateLimitGuard implements CanActivate {
       response.setHeader('X-RateLimit-Reset', String(retryAfter));
 
       if (count > limit) {
+        this.metrics.recordRateLimit(bucketType, 'block');
         response.setHeader('Retry-After', String(retryAfter));
         throw new HttpException(
           {
@@ -57,26 +62,34 @@ export class RateLimitGuard implements CanActivate {
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
+      this.metrics.recordRateLimit(bucketType, 'allow');
     } catch (err) {
       if (err instanceof HttpException) {
         throw err;
       }
       // Redis unavailable — fail open
+      this.metrics.recordRateLimit(bucketType, 'fail_open');
     }
 
     return true;
   }
 
-  private resolveBucket(request: AuthedRequest): { bucketKey: string; limit: number } {
+  private resolveBucket(request: AuthedRequest): {
+    bucketKey: string;
+    bucketType: 'anonymous' | 'user' | 'api_key';
+    limit: number;
+  } {
     if (request.apiKey?.id) {
       return {
         bucketKey: `rl:apikey:${request.apiKey.id}`,
+        bucketType: 'api_key',
         limit: LIMITS.apiKey,
       };
     }
     if (request.user?.sub) {
       return {
         bucketKey: `rl:user:${request.user.sub}`,
+        bucketType: 'user',
         limit: LIMITS.user,
       };
     }
@@ -91,6 +104,7 @@ export class RateLimitGuard implements CanActivate {
     ).trim();
     return {
       bucketKey: `rl:ip:${ip}`,
+      bucketType: 'anonymous',
       limit: LIMITS.anonIp,
     };
   }

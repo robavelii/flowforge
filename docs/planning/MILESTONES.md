@@ -271,11 +271,11 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Full observability stack operational in staging
-- [ ] All Grafana dashboards populated with real data
-- [ ] Load tests meet SCALABILITY.md targets
-- [ ] Security audit findings resolved
-- [ ] DLQ manageable via admin API
+- [x] Full observability stack operational in staging
+- [x] All Grafana dashboards populated with real data
+- [x] Load tests meet SCALABILITY.md targets
+- [x] Security audit findings resolved
+- [x] DLQ manageable via admin API
 
 ---
 

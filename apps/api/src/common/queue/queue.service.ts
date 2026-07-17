@@ -9,6 +9,7 @@ import {
   type NotificationSendJobPayload,
 } from '@flowforge/contracts';
 import { APP_CONFIG } from '../../config/config.constants';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Injectable()
 export class QueueService implements OnModuleDestroy {
@@ -16,7 +17,10 @@ export class QueueService implements OnModuleDestroy {
   private readonly webhookOutboundQueue: Queue<WebhookOutboundJobPayload>;
   private readonly notificationQueue: Queue<NotificationSendJobPayload>;
 
-  constructor(@Inject(APP_CONFIG) config: ApiConfig) {
+  constructor(
+    @Inject(APP_CONFIG) config: ApiConfig,
+    private readonly metrics: MetricsService,
+  ) {
     const connection = { url: config.REDIS_URL, maxRetriesPerRequest: null };
     this.executionQueue = new Queue<ExecutionJobPayload>(QUEUES.WORKFLOW_EXECUTION, {
       connection,
@@ -55,6 +59,7 @@ export class QueueService implements OnModuleDestroy {
       jobId: `exec-${payload.executionId}`,
       priority: priority ? 1 : undefined,
     });
+    this.metrics.recordQueueEnqueue(QUEUES.WORKFLOW_EXECUTION);
     return job.id;
   }
 
@@ -64,6 +69,7 @@ export class QueueService implements OnModuleDestroy {
     const job = await this.webhookOutboundQueue.add('deliver', payload, {
       jobId: `wh-out-${payload.deliveryId}`,
     });
+    this.metrics.recordQueueEnqueue(QUEUES.WEBHOOK_OUTBOUND);
     return job.id;
   }
 
@@ -73,7 +79,16 @@ export class QueueService implements OnModuleDestroy {
     const job = await this.notificationQueue.add('send', payload, {
       jobId: `notif-${payload.notificationId}`,
     });
+    this.metrics.recordQueueEnqueue(QUEUES.NOTIFICATION_SEND);
     return job.id;
+  }
+
+  queues(): Array<{ name: string; queue: Queue }> {
+    return [
+      { name: QUEUES.WORKFLOW_EXECUTION, queue: this.executionQueue },
+      { name: QUEUES.WEBHOOK_OUTBOUND, queue: this.webhookOutboundQueue },
+      { name: QUEUES.NOTIFICATION_SEND, queue: this.notificationQueue },
+    ];
   }
 
   async onModuleDestroy(): Promise<void> {

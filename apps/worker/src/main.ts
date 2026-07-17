@@ -1,7 +1,10 @@
+import './tracing.js';
+import { createServer, type Server } from 'node:http';
 import { Worker, Queue } from 'bullmq';
 import { PrismaClient, ScheduleStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import pino, { type LoggerOptions } from 'pino';
+import { collectDefaultMetrics, Counter, Gauge, Registry } from 'prom-client';
 import { CronExpressionParser } from 'cron-parser';
 import { loadWorkerConfig } from '@flowforge/config';
 import {
@@ -14,12 +17,49 @@ import { runExecution } from '@flowforge/execution-engine';
 import { deliverOutboundWebhookJob } from './webhook-outbound.js';
 import { deliverNotificationJob } from './notification-send.js';
 
+type WorkerMetrics = {
+  server: Server;
+  queueJobs: Counter<string>;
+  queueDepth: Gauge<string>;
+};
+
 function createLogger(level: string, nodeEnv: string): pino.Logger {
   const options: LoggerOptions = { level };
   if (nodeEnv === 'development') {
     options.transport = { target: 'pino-pretty', options: { colorize: true } };
   }
   return pino(options);
+}
+
+function startMetricsServer(config: ReturnType<typeof loadWorkerConfig>): WorkerMetrics {
+  const registry = new Registry();
+  registry.setDefaultLabels({
+    service: config.OTEL_SERVICE_NAME,
+    env: config.NODE_ENV,
+    app: config.APP_NAME,
+    version: config.APP_VERSION,
+  });
+  collectDefaultMetrics({ register: registry, prefix: 'flowforge_worker_' });
+
+  const queueJobs = new Counter({
+    name: 'flowforge_worker_queue_jobs_total',
+    help: 'Worker job results by queue',
+    labelNames: ['queue', 'result'],
+    registers: [registry],
+  });
+  const queueDepth = new Gauge({
+    name: 'flowforge_worker_queue_depth',
+    help: 'Worker-observed queue depth by state',
+    labelNames: ['queue', 'state'],
+    registers: [registry],
+  });
+
+  const server = createServer(async (_req, res) => {
+    res.setHeader('content-type', registry.contentType);
+    res.end(await registry.metrics());
+  });
+  server.listen(config.WORKER_METRICS_PORT, '0.0.0.0');
+  return { server, queueJobs, queueDepth };
 }
 
 async function withLock(
@@ -116,6 +156,7 @@ function main(): void {
   const logger = createLogger(config.LOG_LEVEL, config.NODE_ENV);
   const prisma = new PrismaClient();
   const redis = new Redis(config.REDIS_URL, { maxRetriesPerRequest: null, lazyConnect: true });
+  const metrics = startMetricsServer(config);
 
   logger.info({ service: config.OTEL_SERVICE_NAME }, 'Starting FlowForge worker');
 
@@ -181,6 +222,7 @@ function main(): void {
         }
 
         logger.info({ executionId, status }, 'Execution finished');
+        metrics.queueJobs.inc({ queue: QUEUES.WORKFLOW_EXECUTION, result: status });
         return { status };
       } finally {
         inflight.delete(executionId);
@@ -201,6 +243,7 @@ function main(): void {
         deliveryId: job.data.deliveryId,
         encryptionKey: config.SECRETS_ENCRYPTION_KEY,
       });
+      metrics.queueJobs.inc({ queue: QUEUES.WEBHOOK_OUTBOUND, result: 'completed' });
     },
     {
       connection,
@@ -227,6 +270,7 @@ function main(): void {
           secure: config.SMTP_SECURE,
         },
       });
+      metrics.queueJobs.inc({ queue: QUEUES.NOTIFICATION_SEND, result: 'completed' });
     },
     {
       connection,
@@ -235,16 +279,34 @@ function main(): void {
   );
 
   worker.on('failed', (job, err) => {
+    metrics.queueJobs.inc({ queue: QUEUES.WORKFLOW_EXECUTION, result: 'failed' });
     logger.error({ jobId: job?.id, error: err.message }, 'Execution job failed');
   });
   webhookWorker.on('failed', (job, err) => {
+    metrics.queueJobs.inc({ queue: QUEUES.WEBHOOK_OUTBOUND, result: 'failed' });
     logger.error({ jobId: job?.id, error: err.message }, 'Webhook delivery job failed');
   });
   notificationWorker.on('failed', (job, err) => {
+    metrics.queueJobs.inc({ queue: QUEUES.NOTIFICATION_SEND, result: 'failed' });
     logger.error({ jobId: job?.id, error: err.message }, 'Notification job failed');
   });
 
   let schedulerTimer: NodeJS.Timeout | null = setInterval(() => {
+    void Promise.all([
+      executionQueue.getJobCounts('waiting', 'active', 'delayed', 'failed'),
+      webhookOutboundQueue.getJobCounts('waiting', 'active', 'delayed', 'failed'),
+      notificationQueue.getJobCounts('waiting', 'active', 'delayed', 'failed'),
+    ]).then(([execution, webhook, notification]) => {
+      for (const [state, count] of Object.entries(execution)) {
+        metrics.queueDepth.set({ queue: QUEUES.WORKFLOW_EXECUTION, state }, count ?? 0);
+      }
+      for (const [state, count] of Object.entries(webhook)) {
+        metrics.queueDepth.set({ queue: QUEUES.WEBHOOK_OUTBOUND, state }, count ?? 0);
+      }
+      for (const [state, count] of Object.entries(notification)) {
+        metrics.queueDepth.set({ queue: QUEUES.NOTIFICATION_SEND, state }, count ?? 0);
+      }
+    });
     void tickScheduler(prisma, executionQueue, redis, logger).catch((err: unknown) => {
       logger.error({ err }, 'Scheduler tick failed');
     });
@@ -266,6 +328,7 @@ function main(): void {
       webhookOutboundQueue.close(),
       notificationQueue.close(),
     ]);
+    await new Promise<void>((resolve) => metrics.server.close(() => resolve()));
     await redis.quit();
     await prisma.$disconnect();
     logger.info('Worker shut down cleanly');

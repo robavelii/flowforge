@@ -16,6 +16,7 @@ import { IntegrationsModule } from '../modules/integrations/integrations.module'
 import { FilesModule } from '../modules/files/files.module';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
 import { SearchModule } from '../modules/search/search.module';
+import { AdminModule } from '../modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SearchModule } from '../modules/search/search.module';
     FilesModule,
     NotificationsModule,
     SearchModule,
+    AdminModule,
   ],
 })
 export class V1Module {}

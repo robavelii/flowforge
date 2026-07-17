@@ -1,3 +1,4 @@
+import './tracing';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -63,6 +64,8 @@ async function bootstrap(): Promise<void> {
     .addTag('API Keys')
     .addTag('Audit')
     .addTag('Timeline')
+    .addTag('Metrics')
+    .addTag('Admin')
     .addTag('Health')
     .build();
 

@@ -5,6 +5,20 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-17
+
+### Added
+
+- Milestone 7: Observability Hardening & Performance
+- OpenTelemetry bootstrap for API and worker with HTTP/DB/Redis/BullMQ auto-instrumentation
+- Prometheus metrics endpoint (`GET /api/v1/metrics`) with HTTP, DB, queue, rate-limit, and cleanup metrics
+- Worker metrics server for queue job results and queue depth
+- Grafana provisioning for FlowForge dashboards plus Prometheus alert rules and Promtail → Loki logs
+- DLQ admin API for listing/replaying/discarding failed jobs and workspace cleanup API for retention purges
+- Optional read-replica routing for audit, timeline, and execution-history reads via `DATABASE_REPLICA_URL`
+- Retention/read-path indexes and k6 baseline load scripts
+- M7 e2e coverage for metrics, DLQ listing, and cleanup
+
 ## [0.7.0] - 2026-07-17
 
 ### Added

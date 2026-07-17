@@ -1,0 +1,31 @@
+{
+  "uid": "flowforge-security-auth",
+  "title": "FlowForge Security & Auth",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Rate Limit Decisions",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flowforge_rate_limit_decisions_total[5m])) by (bucket, decision)",
+          "legendFormat": "{{bucket}} {{decision}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "4xx / 5xx Responses",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flowforge_http_request_duration_seconds_count{status_code=~\"4..|5..\"}[5m])) by (status_code)",
+          "legendFormat": "{{status_code}}"
+        }
+      ]
+    }
+  ]
+}

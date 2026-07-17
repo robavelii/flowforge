@@ -1,0 +1,19 @@
+{
+  "uid": "flowforge-loki-logs",
+  "title": "FlowForge Loki Logs",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "logs",
+      "title": "Application Logs",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 12 },
+      "targets": [
+        {
+          "expr": "{service=~\"flowforge-api|flowforge-worker\"}"
+        }
+      ]
+    }
+  ]
+}

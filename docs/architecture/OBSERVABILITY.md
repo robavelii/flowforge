@@ -4,6 +4,8 @@
 
 FlowForge implements enterprise-grade observability using **OpenTelemetry** for traces, **Prometheus** for metrics, **Grafana** for dashboards, **Loki** for logs, and **Pino** for structured logging in application code.
 
+> M7 implementation: API metrics are exposed at `/api/v1/metrics`, worker metrics at `worker:3002`, dashboards are provisioned from `docker/monitoring/grafana/dashboards`, alert rules from `docker/monitoring/prometheus-rules`, and container stdout logs are shipped to Loki through Promtail.
+
 ---
 
 ## Table of Contents

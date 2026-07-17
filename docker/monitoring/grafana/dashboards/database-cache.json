@@ -1,0 +1,31 @@
+{
+  "uid": "flowforge-database-cache",
+  "title": "FlowForge Database & Cache",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "DB Query Rate",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flowforge_db_query_duration_seconds_count[5m])) by (operation)",
+          "legendFormat": "{{operation}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Redis Up",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "up{job=\"flowforge-api\"}",
+          "legendFormat": "api"
+        }
+      ]
+    }
+  ]
+}

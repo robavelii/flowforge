@@ -370,6 +370,16 @@ Global `ProblemDetailsExceptionFilter` maps domain exceptions → RFC 7807. Vali
 | PATCH | `/users/me/notification-preferences` | Update preferences |
 | GET | `/workspaces/:workspaceId/notifications` | List notifications |
 
+### Metrics & Admin
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/metrics` | Prometheus scrape endpoint |
+| GET | `/admin/dlq` | List failed jobs for managed queues |
+| POST | `/admin/dlq/:queue/:jobId/replay` | Replay failed queue job |
+| DELETE | `/admin/dlq/:queue/:jobId` | Discard failed queue job |
+| POST | `/admin/maintenance/cleanup` | Run workspace-scoped retention cleanup |
+
 ---
 
 ## Sequence Diagrams

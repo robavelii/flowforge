@@ -1,0 +1,66 @@
+groups:
+  - name: flowforge
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(flowforge_http_request_duration_seconds_count{status_code=~"5.."}[5m])) / sum(rate(flowforge_http_request_duration_seconds_count[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: FlowForge API 5xx error rate is above 5%
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.99, sum(rate(flowforge_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: FlowForge API p99 latency is above 1s
+
+      - alert: PostgresDown
+        expr: up{job="flowforge-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: FlowForge API scrape is down; readiness should also be checked
+
+      - alert: RedisDown
+        expr: absent(flowforge_rate_limit_decisions_total) == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Redis-backed rate-limit metrics are absent
+
+      - alert: QueueBacklog
+        expr: sum(flowforge_worker_queue_depth{state=~"waiting|delayed"}) by (queue) > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Queue backlog is high for {{ $labels.queue }}
+
+      - alert: DLQGrowing
+        expr: sum(flowforge_queue_depth{state="failed"}) by (queue) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: Failed jobs exist for {{ $labels.queue }}
+
+      - alert: OutboxLag
+        expr: sum(flowforge_db_query_duration_seconds_count) >= 0 and absent(flowforge_cleanup_deleted_total{table="outbox_events"}) == 1
+        for: 24h
+        labels:
+          severity: info
+        annotations:
+          summary: Outbox cleanup metric has not been emitted recently
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host disk space below 10%

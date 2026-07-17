@@ -1,0 +1,31 @@
+{
+  "uid": "flowforge-queue-health",
+  "title": "FlowForge Queue Health",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Failed Jobs",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(flowforge_queue_depth{state=\"failed\"}) by (queue)",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Worker Job Results",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flowforge_worker_queue_jobs_total[5m])) by (queue, result)",
+          "legendFormat": "{{queue}} {{result}}"
+        }
+      ]
+    }
+  ]
+}

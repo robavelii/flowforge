@@ -1,0 +1,31 @@
+{
+  "uid": "flowforge-platform-overview",
+  "title": "FlowForge Platform Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "HTTP Requests",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(flowforge_http_request_duration_seconds_count[5m])) by (status_code)",
+          "legendFormat": "{{status_code}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(flowforge_queue_depth) by (queue, state)",
+          "legendFormat": "{{queue}} {{state}}"
+        }
+      ]
+    }
+  ]
+}

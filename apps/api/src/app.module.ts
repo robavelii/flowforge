@@ -12,6 +12,8 @@ import { OutboxModule } from './common/outbox/outbox.module';
 import { RedisModule } from './common/redis/redis.module';
 import { QueueModule } from './common/queue/queue.module';
 import { StorageModule } from './common/storage/storage.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import { CompositeAuthGuard } from './common/auth/composite-auth.guard';
 import { TenantGuard } from './common/tenant/tenant.guard';
 import { PermissionGuard } from './modules/authorization/application/permission.guard';
@@ -28,6 +30,7 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
     OutboxModule,
     QueueModule,
     StorageModule,
+    MetricsModule,
     AuthorizationModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],
@@ -41,6 +44,17 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
           customProps: (req: { id?: string }) => ({
             correlationId: req.id,
           }),
+          redact: [
+            'req.headers.authorization',
+            'req.headers.cookie',
+            'req.headers["x-api-key"]',
+            'res.headers["set-cookie"]',
+            'password',
+            '*.password',
+            '*.token',
+            '*.secret',
+            '*.value',
+          ],
           serializers: {
             req: (req: { id?: string; method?: string; url?: string }) => ({
               id: req.id,
@@ -66,6 +80,7 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
     { provide: APP_GUARD, useClass: TenantGuard },
     { provide: APP_GUARD, useClass: PermissionGuard },
     { provide: APP_GUARD, useClass: RateLimitGuard },
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
