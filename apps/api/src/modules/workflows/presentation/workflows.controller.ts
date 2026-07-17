@@ -80,7 +80,7 @@ export class WorkflowsController {
     @Tenant() tenant: TenantContextData,
     @Query(new ZodValidationPipe(searchQuerySchema)) query: { q: string; limit: number },
   ) {
-    return this.search.search(tenant.workspaceId, query.q, query.limit);
+    return this.search.search(tenant.workspaceId, query.q, { limit: query.limit });
   }
 
   @Get()

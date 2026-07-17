@@ -13,6 +13,9 @@ import { SchedulesModule } from '../modules/schedules/schedules.module';
 import { SecretsModule } from '../modules/secrets/secrets.module';
 import { WebhooksModule } from '../modules/webhooks/webhooks.module';
 import { IntegrationsModule } from '../modules/integrations/integrations.module';
+import { FilesModule } from '../modules/files/files.module';
+import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { SearchModule } from '../modules/search/search.module';
 
 @Module({
   imports: [
@@ -30,6 +33,9 @@ import { IntegrationsModule } from '../modules/integrations/integrations.module'
     SecretsModule,
     WebhooksModule,
     IntegrationsModule,
+    FilesModule,
+    NotificationsModule,
+    SearchModule,
   ],
 })
 export class V1Module {}

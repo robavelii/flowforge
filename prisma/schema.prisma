@@ -115,6 +115,31 @@ enum IntegrationStatus {
   error
 }
 
+enum NotificationChannel {
+  email
+  slack
+  webhook
+}
+
+enum NotificationStatus {
+  pending
+  sent
+  failed
+}
+
+enum FileScanStatus {
+  pending
+  clean
+  infected
+  skipped
+}
+
+enum FileStatus {
+  pending_upload
+  ready
+  deleted
+}
+
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   email           String    @db.VarChar(320)
@@ -142,6 +167,9 @@ model User {
   executionsStarted  WorkflowExecution[] @relation("ExecutionStarter")
   secretsCreated     Secret[]            @relation("SecretCreator")
   integrationsConnected Integration[]    @relation("IntegrationConnector")
+  filesUploaded      FileObject[]        @relation("FileUploader")
+  notificationPreferences NotificationPreference[]
+  notifications      Notification[]      @relation("NotificationRecipient")
 
   @@unique([email])
   @@index([createdAt])
@@ -254,6 +282,9 @@ model Workspace {
   webhookDeliveries  WebhookDelivery[]
   secrets            Secret[]
   integrations       Integration[]
+  files              FileObject[]
+  notifications      Notification[]
+  notificationPreferences NotificationPreference[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -934,4 +965,92 @@ model Integration {
   @@unique([workspaceId, provider])
   @@index([workspaceId])
   @@map("integrations")
+}
+
+model NotificationTemplate {
+  id        String              @id @default(uuid()) @db.Uuid
+  key       String              @db.VarChar(64)
+  channel   NotificationChannel
+  subject   String?             @db.VarChar(255)
+  body      String              @db.Text
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  notifications Notification[]
+
+  @@unique([key, channel])
+  @@map("notification_templates")
+}
+
+model NotificationPreference {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  workspaceId String?             @map("workspace_id") @db.Uuid
+  channel     NotificationChannel
+  eventType   String              @map("event_type") @db.VarChar(64)
+  enabled     Boolean             @default(true)
+  config      Json?
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel, eventType])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id           String              @id @default(uuid()) @db.Uuid
+  workspaceId  String?             @map("workspace_id") @db.Uuid
+  userId       String?             @map("user_id") @db.Uuid
+  templateId   String?             @map("template_id") @db.Uuid
+  templateKey  String              @map("template_key") @db.VarChar(64)
+  channel      NotificationChannel
+  status       NotificationStatus  @default(pending)
+  recipient    String              @db.VarChar(512)
+  subject      String?             @db.VarChar(255)
+  body         String              @db.Text
+  payload      Json?
+  errorMessage String?             @map("error_message") @db.Text
+  attemptCount Int                 @default(0) @map("attempt_count")
+  sentAt       DateTime?           @map("sent_at") @db.Timestamptz(6)
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace Workspace?            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?                 @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: SetNull)
+  template  NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("notifications")
+}
+
+/// Stored object metadata (MinIO). Named FileObject to avoid clashing with TS File.
+model FileObject {
+  id             String         @id @default(uuid()) @db.Uuid
+  workspaceId    String         @map("workspace_id") @db.Uuid
+  uploadedById   String?        @map("uploaded_by_id") @db.Uuid
+  filename       String         @db.VarChar(512)
+  contentType    String         @map("content_type") @db.VarChar(255)
+  sizeBytes      BigInt?        @map("size_bytes")
+  storageKey     String         @map("storage_key") @db.VarChar(1024)
+  checksumSha256 String?        @map("checksum_sha256") @db.VarChar(64)
+  scanStatus     FileScanStatus @default(pending) @map("scan_status")
+  status         FileStatus     @default(pending_upload)
+  confirmedAt    DateTime?      @map("confirmed_at") @db.Timestamptz(6)
+  deletedAt      DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploadedBy User?     @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, deletedAt, createdAt])
+  @@index([storageKey])
+  @@map("files")
 }

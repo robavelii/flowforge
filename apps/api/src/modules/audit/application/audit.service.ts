@@ -29,7 +29,7 @@ export class AuditService {
 
   async write(input: AuditWriteInput, tx?: TxClient): Promise<void> {
     const client = tx ?? this.prisma;
-    await client.auditLog.create({
+    const row = await client.auditLog.create({
       data: {
         workspaceId: input.workspaceId ?? null,
         actorUserId: input.actorUserId ?? null,
@@ -45,6 +45,33 @@ export class AuditService {
         reason: input.reason,
       },
     });
+
+    if (input.workspaceId && !tx) {
+      await this.prisma.searchDocument.upsert({
+        where: {
+          workspaceId_entityType_entityId: {
+            workspaceId: input.workspaceId,
+            entityType: 'audit',
+            entityId: row.id,
+          },
+        },
+        create: {
+          workspaceId: input.workspaceId,
+          entityType: 'audit',
+          entityId: row.id,
+          title: input.action,
+          body: `${input.resourceType} ${input.resourceId ?? ''} ${input.reason ?? ''}`.trim(),
+          metadata: {
+            resourceType: input.resourceType,
+            resourceId: input.resourceId ?? null,
+          },
+        },
+        update: {
+          title: input.action,
+          body: `${input.resourceType} ${input.resourceId ?? ''} ${input.reason ?? ''}`.trim(),
+        },
+      });
+    }
   }
 
   async list(params: {

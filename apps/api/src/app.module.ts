@@ -11,6 +11,7 @@ import { PrismaModule } from './persistence/prisma.module';
 import { OutboxModule } from './common/outbox/outbox.module';
 import { RedisModule } from './common/redis/redis.module';
 import { QueueModule } from './common/queue/queue.module';
+import { StorageModule } from './common/storage/storage.module';
 import { CompositeAuthGuard } from './common/auth/composite-auth.guard';
 import { TenantGuard } from './common/tenant/tenant.guard';
 import { PermissionGuard } from './modules/authorization/application/permission.guard';
@@ -26,6 +27,7 @@ import { AuthorizationModule } from './modules/authorization/authorization.modul
     RedisModule,
     OutboxModule,
     QueueModule,
+    StorageModule,
     AuthorizationModule,
     LoggerModule.forRootAsync({
       inject: [APP_CONFIG],

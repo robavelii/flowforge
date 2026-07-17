@@ -5,9 +5,10 @@ import { PrismaService } from '../../persistence/prisma.service';
 import { SearchService } from '../../modules/workflows/application/search.service';
 import { WorkflowCacheService } from '../../modules/workflows/infrastructure/workflow-cache.service';
 import { WebhookSubscriptionsService } from '../../modules/webhooks/application/webhook-subscriptions.service';
+import { NotificationsService } from '../../modules/notifications/application/notifications.service';
 
 /**
- * Outbox relay — publishes events, projects timeline + search, fans out outbound webhooks.
+ * Outbox relay — publishes events, projects timeline + search, fans out webhooks/notifications.
  */
 @Injectable()
 export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
@@ -21,6 +22,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
     private readonly search: SearchService,
     private readonly workflowCache: WorkflowCacheService,
     private readonly webhookSubscriptions: WebhookSubscriptionsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   onModuleInit(): void {
@@ -55,6 +57,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
         await this.projectTimeline(event);
         await this.projectSearchAndCache(event);
         await this.fanOutOutboundWebhooks(event);
+        await this.dispatchNotifications(event);
       }
 
       await this.outbox.markPublished(events.map((e) => e.id));
@@ -131,39 +134,103 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     const payload = (event.payload ?? {}) as Record<string, unknown>;
-    const workflowId = typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
-    if (!workflowId) {
-      return;
-    }
-
-    if (event.eventType === 'WorkflowDeleted') {
-      await this.search.removeWorkflowDocument(event.workspaceId, workflowId);
-      await this.workflowCache.invalidate(event.workspaceId, workflowId);
-      return;
-    }
-
-    if (event.eventType === 'WorkflowUnpublished') {
-      await this.workflowCache.invalidate(event.workspaceId, workflowId);
-    }
+    const workspaceId = event.workspaceId;
 
     if (
       event.eventType === 'WorkflowCreated' ||
       event.eventType === 'WorkflowUpdated' ||
-      event.eventType === 'WorkflowPublished'
+      event.eventType === 'WorkflowPublished' ||
+      event.eventType === 'WorkflowUnpublished' ||
+      event.eventType === 'WorkflowDeleted'
     ) {
+      const workflowId = typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+      if (!workflowId) {
+        return;
+      }
+
+      if (event.eventType === 'WorkflowDeleted') {
+        await this.search.removeWorkflowDocument(workspaceId, workflowId);
+        await this.workflowCache.invalidate(workspaceId, workflowId);
+        return;
+      }
+
+      if (event.eventType === 'WorkflowUnpublished') {
+        await this.workflowCache.invalidate(workspaceId, workflowId);
+      }
+
       const workflow = await this.prisma.workflow.findFirst({
-        where: { id: workflowId, workspaceId: event.workspaceId },
+        where: { id: workflowId, workspaceId },
         select: { name: true, description: true, status: true },
       });
-      if (!workflow || !workflow.name) {
+      if (!workflow?.name) {
         return;
       }
       await this.search.upsertWorkflowDocument({
-        workspaceId: event.workspaceId,
+        workspaceId,
         workflowId,
         title: workflow.name,
         body: workflow.description ?? '',
         metadata: { status: workflow.status },
+      });
+      return;
+    }
+
+    if (event.eventType === 'MemberAdded') {
+      const userId = typeof payload['userId'] === 'string' ? payload['userId'] : null;
+      if (!userId) {
+        return;
+      }
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId },
+        select: { name: true, email: true },
+      });
+      if (!user) {
+        return;
+      }
+      await this.search.upsertDocument({
+        workspaceId,
+        entityType: 'member',
+        entityId: userId,
+        title: user.name,
+        body: `${user.email} ${String(payload['role'] ?? '')}`,
+        metadata: { role: payload['role'] ?? null },
+      });
+      return;
+    }
+
+    if (event.eventType === 'ExecutionQueued' || event.eventType === 'ExecutionFailed' || event.eventType === 'ExecutionCompleted') {
+      const executionId =
+        typeof payload['executionId'] === 'string' ? payload['executionId'] : null;
+      const workflowId =
+        typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+      if (!executionId) {
+        return;
+      }
+      const execution = await this.prisma.workflowExecution.findFirst({
+        where: { id: executionId, workspaceId },
+        select: {
+          status: true,
+          errorMessage: true,
+          triggerType: true,
+          sandbox: true,
+        },
+      });
+      if (!execution) {
+        return;
+      }
+      await this.search.upsertDocument({
+        workspaceId,
+        entityType: 'execution',
+        entityId: executionId,
+        title: `Execution ${execution.status}`,
+        body: [workflowId, execution.triggerType, execution.errorMessage]
+          .filter(Boolean)
+          .join(' '),
+        metadata: {
+          status: execution.status,
+          workflowId,
+          sandbox: execution.sandbox,
+        },
       });
     }
   }
@@ -184,5 +251,46 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
       eventId: event.id,
       payload,
     });
+  }
+
+  private async dispatchNotifications(event: {
+    eventType: string;
+    payload: Prisma.JsonValue;
+    workspaceId: string | null;
+  }): Promise<void> {
+    const payload = (event.payload ?? {}) as Record<string, unknown>;
+
+    if (event.eventType === 'UserRegistered') {
+      const userId = typeof payload['userId'] === 'string' ? payload['userId'] : null;
+      const email = typeof payload['email'] === 'string' ? payload['email'] : null;
+      const name = typeof payload['name'] === 'string' ? payload['name'] : 'there';
+      if (userId && email) {
+        await this.notifications.notifyWelcome({ userId, email, name });
+      }
+      return;
+    }
+
+    if (event.eventType === 'ExecutionFailed' && event.workspaceId) {
+      const executionId =
+        typeof payload['executionId'] === 'string' ? payload['executionId'] : null;
+      const workflowId =
+        typeof payload['workflowId'] === 'string' ? payload['workflowId'] : null;
+      if (!executionId || !workflowId) {
+        return;
+      }
+      await this.notifications.notifyExecutionFailure({
+        workspaceId: event.workspaceId,
+        executionId,
+        workflowId,
+        errorMessage:
+          typeof payload['errorMessage'] === 'string'
+            ? payload['errorMessage']
+            : 'Execution failed',
+        startedByUserId:
+          typeof payload['startedByUserId'] === 'string'
+            ? payload['startedByUserId']
+            : null,
+      });
+    }
   }
 }

@@ -9,12 +9,14 @@ import { InvitationStatus } from '@prisma/client';
 import { PrismaService } from '../../../persistence/prisma.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { generateOpaqueToken, sha256 } from '../../../common/utils/crypto.util';
+import { NotificationsService } from '../../notifications/application/notifications.service';
 
 @Injectable()
 export class MembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(workspaceId: string, actorUserId: string) {
@@ -67,13 +69,27 @@ export class MembersService {
       },
     });
 
+    const workspace = await this.prisma.workspace.findUniqueOrThrow({
+      where: { id: workspaceId },
+      select: { name: true },
+    });
+
+    await this.notifications.notifyInvitation({
+      workspaceId,
+      email,
+      workspaceName: workspace.name,
+      role,
+      token,
+      invitedByUserId: actorUserId,
+    });
+
     return {
       id: invitation.id,
       email: invitation.email,
       role: invitation.role,
       status: invitation.status,
       expiresAt: invitation.expiresAt,
-      // Returned once for delivery; production would email this
+      // Returned once for delivery; email notification also queued
       token,
     };
   }

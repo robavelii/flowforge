@@ -5,6 +5,18 @@ All notable changes to FlowForge are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-17
+
+### Added
+
+- Milestone 6: Notifications, Files & Search
+- Prisma models for notifications, templates, preferences, and file metadata (+ FTS `search_vector` GIN index)
+- Email/Slack notification delivery via BullMQ `notification.send` with welcome, invitation, and execution-failure templates
+- User notification preferences (`GET/PATCH /users/me/notification-preferences`) respected on send
+- MinIO presigned upload/download APIs (`/v1/files`) with workspace-scoped keys and confirm/list/delete lifecycle
+- Workspace full-text search (`GET /v1/search`) across workflows, executions, members, and audit; outbox projection expands indexes
+- M6 e2e coverage for prefs, invitation/failure notifications, files, and FTS
+
 ## [0.6.0] - 2026-07-17
 
 ### Added

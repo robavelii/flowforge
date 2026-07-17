@@ -56,6 +56,16 @@ export const apiConfigSchema = baseConfigSchema
     GITHUB_CLIENT_SECRET: z.string().optional(),
     GOOGLE_CLIENT_ID: z.string().optional(),
     GOOGLE_CLIENT_SECRET: z.string().optional(),
+    EMAIL_FROM: z.string().email().default('noreply@flowforge.local'),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_SECURE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    FILE_PRESIGN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-api'),
   });
@@ -69,6 +79,15 @@ export const workerConfigSchema = baseConfigSchema
       .string()
       .min(32)
       .default('flowforge-dev-secrets-encryption-key-32b'),
+    EMAIL_FROM: z.string().email().default('noreply@flowforge.local'),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(587),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    SMTP_SECURE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
     OTEL_EXPORTER_OTLP_ENDPOINT: z.string().url().optional(),
     OTEL_SERVICE_NAME: z.string().default('flowforge-worker'),
   });

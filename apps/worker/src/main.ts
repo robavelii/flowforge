@@ -4,9 +4,15 @@ import Redis from 'ioredis';
 import pino, { type LoggerOptions } from 'pino';
 import { CronExpressionParser } from 'cron-parser';
 import { loadWorkerConfig } from '@flowforge/config';
-import { QUEUES, type ExecutionJobPayload, type WebhookOutboundJobPayload } from '@flowforge/contracts';
+import {
+  QUEUES,
+  type ExecutionJobPayload,
+  type WebhookOutboundJobPayload,
+  type NotificationSendJobPayload,
+} from '@flowforge/contracts';
 import { runExecution } from '@flowforge/execution-engine';
 import { deliverOutboundWebhookJob } from './webhook-outbound.js';
+import { deliverNotificationJob } from './notification-send.js';
 
 function createLogger(level: string, nodeEnv: string): pino.Logger {
   const options: LoggerOptions = { level };
@@ -124,6 +130,9 @@ function main(): void {
   const webhookOutboundQueue = new Queue<WebhookOutboundJobPayload>(QUEUES.WEBHOOK_OUTBOUND, {
     connection,
   });
+  const notificationQueue = new Queue<NotificationSendJobPayload>(QUEUES.NOTIFICATION_SEND, {
+    connection,
+  });
 
   const inflight = new Set<string>();
 
@@ -148,6 +157,29 @@ function main(): void {
             logger.debug({ executionId, checkpoint }, 'Execution checkpoint');
           },
         });
+
+        const execution = await prisma.workflowExecution.findUnique({
+          where: { id: executionId },
+        });
+        if (execution && (status === 'completed' || status === 'failed')) {
+          await prisma.outboxEvent.create({
+            data: {
+              workspaceId: execution.workspaceId,
+              aggregateType: 'WorkflowExecution',
+              aggregateId: execution.id,
+              eventType: status === 'failed' ? 'ExecutionFailed' : 'ExecutionCompleted',
+              payload: {
+                executionId: execution.id,
+                workflowId: execution.workflowId,
+                workspaceId: execution.workspaceId,
+                errorMessage: execution.errorMessage,
+                startedByUserId: execution.startedByUserId,
+              },
+              occurredAt: new Date(),
+            },
+          });
+        }
+
         logger.info({ executionId, status }, 'Execution finished');
         return { status };
       } finally {
@@ -176,11 +208,40 @@ function main(): void {
     },
   );
 
+  const notificationWorker = new Worker<NotificationSendJobPayload>(
+    QUEUES.NOTIFICATION_SEND,
+    async (job) => {
+      logger.info(
+        { notificationId: job.data.notificationId, jobId: job.id },
+        'Sending notification',
+      );
+      await deliverNotificationJob({
+        prisma,
+        notificationId: job.data.notificationId,
+        emailFrom: config.EMAIL_FROM,
+        smtp: {
+          host: config.SMTP_HOST,
+          port: config.SMTP_PORT,
+          user: config.SMTP_USER,
+          pass: config.SMTP_PASS,
+          secure: config.SMTP_SECURE,
+        },
+      });
+    },
+    {
+      connection,
+      concurrency: Math.max(1, Math.floor(config.WORKER_CONCURRENCY / 2)),
+    },
+  );
+
   worker.on('failed', (job, err) => {
     logger.error({ jobId: job?.id, error: err.message }, 'Execution job failed');
   });
   webhookWorker.on('failed', (job, err) => {
     logger.error({ jobId: job?.id, error: err.message }, 'Webhook delivery job failed');
+  });
+  notificationWorker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, error: err.message }, 'Notification job failed');
   });
 
   let schedulerTimer: NodeJS.Timeout | null = setInterval(() => {
@@ -195,12 +256,16 @@ function main(): void {
       clearInterval(schedulerTimer);
       schedulerTimer = null;
     }
-    await Promise.all([worker.close(), webhookWorker.close()]);
+    await Promise.all([worker.close(), webhookWorker.close(), notificationWorker.close()]);
     const deadline = Date.now() + 25_000;
     while (inflight.size > 0 && Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, 200));
     }
-    await Promise.all([executionQueue.close(), webhookOutboundQueue.close()]);
+    await Promise.all([
+      executionQueue.close(),
+      webhookOutboundQueue.close(),
+      notificationQueue.close(),
+    ]);
     await redis.quit();
     await prisma.$disconnect();
     logger.info('Worker shut down cleanly');

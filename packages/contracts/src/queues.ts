@@ -4,6 +4,7 @@ export const QUEUES = {
   WORKFLOW_EXECUTION_PRIORITY: 'workflow.execution.priority',
   WORKFLOW_EXECUTION_DELAYED: 'workflow.execution.delayed',
   WEBHOOK_OUTBOUND: 'webhook.outbound',
+  NOTIFICATION_SEND: 'notification.send',
 } as const;
 
 export type ExecutionJobPayload = {
@@ -17,4 +18,8 @@ export type ExecutionJobPayload = {
 export type WebhookOutboundJobPayload = {
   deliveryId: string;
   workspaceId: string;
+};
+
+export type NotificationSendJobPayload = {
+  notificationId: string;
 };

@@ -241,10 +241,10 @@ This document defines the incremental implementation roadmap for FlowForge. Each
 
 ### Definition of Done
 
-- [ ] Email notifications sent on configured triggers
-- [ ] Files uploadable via presigned URL; downloadable
-- [ ] Search returns relevant results across entity types
-- [ ] Notification preferences respected
+- [x] Email notifications sent on configured triggers
+- [x] Files uploadable via presigned URL; downloadable
+- [x] Search returns relevant results across entity types
+- [x] Notification preferences respected
 
 ---
 

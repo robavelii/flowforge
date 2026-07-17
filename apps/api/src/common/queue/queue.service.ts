@@ -6,6 +6,7 @@ import {
   QUEUES,
   type ExecutionJobPayload,
   type WebhookOutboundJobPayload,
+  type NotificationSendJobPayload,
 } from '@flowforge/contracts';
 import { APP_CONFIG } from '../../config/config.constants';
 
@@ -13,6 +14,7 @@ import { APP_CONFIG } from '../../config/config.constants';
 export class QueueService implements OnModuleDestroy {
   private readonly executionQueue: Queue<ExecutionJobPayload>;
   private readonly webhookOutboundQueue: Queue<WebhookOutboundJobPayload>;
+  private readonly notificationQueue: Queue<NotificationSendJobPayload>;
 
   constructor(@Inject(APP_CONFIG) config: ApiConfig) {
     const connection = { url: config.REDIS_URL, maxRetriesPerRequest: null };
@@ -26,6 +28,15 @@ export class QueueService implements OnModuleDestroy {
       },
     });
     this.webhookOutboundQueue = new Queue<WebhookOutboundJobPayload>(QUEUES.WEBHOOK_OUTBOUND, {
+      connection,
+      defaultJobOptions: {
+        removeOnComplete: 1000,
+        removeOnFail: 5000,
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 2000 },
+      },
+    });
+    this.notificationQueue = new Queue<NotificationSendJobPayload>(QUEUES.NOTIFICATION_SEND, {
       connection,
       defaultJobOptions: {
         removeOnComplete: 1000,
@@ -56,7 +67,20 @@ export class QueueService implements OnModuleDestroy {
     return job.id;
   }
 
+  async enqueueNotificationSend(
+    payload: NotificationSendJobPayload,
+  ): Promise<string | undefined> {
+    const job = await this.notificationQueue.add('send', payload, {
+      jobId: `notif-${payload.notificationId}`,
+    });
+    return job.id;
+  }
+
   async onModuleDestroy(): Promise<void> {
-    await Promise.all([this.executionQueue.close(), this.webhookOutboundQueue.close()]);
+    await Promise.all([
+      this.executionQueue.close(),
+      this.webhookOutboundQueue.close(),
+      this.notificationQueue.close(),
+    ]);
   }
 }

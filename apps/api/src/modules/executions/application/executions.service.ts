@@ -299,10 +299,44 @@ export class ExecutionsService {
       const refreshed = await this.prisma.workflowExecution.findUniqueOrThrow({
         where: { id: execution.id },
       });
+      await this.emitExecutionFinished(refreshed);
       return this.toSummary(refreshed);
     }
 
     return this.toSummary(execution);
+  }
+
+  private async emitExecutionFinished(execution: {
+    id: string;
+    workspaceId: string;
+    workflowId: string;
+    status: ExecutionStatus;
+    errorMessage: string | null;
+    startedByUserId: string | null;
+  }): Promise<void> {
+    if (
+      execution.status !== ExecutionStatus.completed &&
+      execution.status !== ExecutionStatus.failed
+    ) {
+      return;
+    }
+
+    const eventType =
+      execution.status === ExecutionStatus.failed ? 'ExecutionFailed' : 'ExecutionCompleted';
+
+    await this.outbox.append({
+      workspaceId: execution.workspaceId,
+      aggregateType: 'WorkflowExecution',
+      aggregateId: execution.id,
+      eventType,
+      payload: {
+        executionId: execution.id,
+        workflowId: execution.workflowId,
+        workspaceId: execution.workspaceId,
+        errorMessage: execution.errorMessage,
+        startedByUserId: execution.startedByUserId,
+      },
+    });
   }
 
   private async requireExecution(workspaceId: string, executionId: string) {
